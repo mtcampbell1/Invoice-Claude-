@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  password             String?
+  name                 String?
+  plan                 String    @default("free") // free, basic, pro, business
+  tokens               Int       @default(3)
+  tokensResetAt        DateTime  @default(now())
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  business  Business?
+  contacts  Contact[]
+  documents Document[]
+}
+
+model Business {
+  id      String  @id @default(cuid())
+  userId  String  @unique
+  name    String
+  address String?
+  city    String?
+  state   String?
+  zip     String?
+  country String?
+  phone   String?
+  email   String?
+  website String?
+  taxId   String?
+  logoUrl String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  company   String?
+  email     String?
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  zip       String?
+  country   String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String // invoice, receipt, statement
+  number     String?
+  clientName String?
+  total      Float?
+  data       String // JSON string with full document data
+  status     String   @default("draft") // draft, sent, paid
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

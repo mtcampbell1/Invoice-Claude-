@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Environment files (contain secrets - configure these on the server)
+.env
+.env.local
+.env.production
+
+# Database files (generated at runtime)
+dev.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Prisma generated client
+/app/generated/prisma
+
+# Build artifacts
+dist/
+build/
+tsconfig.tsbuildinfo
+
+# Logs
+npm-debug.log*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
