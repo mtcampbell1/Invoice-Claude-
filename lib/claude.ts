@@ -1,8 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const anthropic = process.env.ANTHROPIC_API_KEY
+  ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  : null;
 
 export interface LineItem {
   description: string;
@@ -49,10 +49,62 @@ export interface DocumentData {
   memo?: string;
 }
 
+function formatDateReadable(dateStr?: string): string {
+  if (!dateStr) return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+
+function buildLocalDocument(rawData: Partial<DocumentData>, type: "invoice" | "receipt" | "statement"): DocumentData {
+  const items = (rawData.items ?? []).map((item) => ({
+    ...item,
+    amount: item.quantity * item.rate,
+  }));
+  const subtotal = items.reduce((s, i) => s + i.amount, 0);
+  const taxAmount = rawData.taxRate ? subtotal * (rawData.taxRate / 100) : undefined;
+  const total = subtotal + (taxAmount ?? 0) - (rawData.discountAmount ?? 0);
+
+  const defaultNotes: Record<string, string> = {
+    invoice: "Payment is due within 30 days of the invoice date. Thank you for your business.",
+    receipt: "Thank you for your business! This receipt confirms payment received in full.",
+    statement: "Please review this statement and contact us with any questions.",
+  };
+
+  const defaultPaymentTerms: Record<string, string> = {
+    invoice: "Net 30",
+    receipt: "Paid in full",
+    statement: "Due upon receipt",
+  };
+
+  return {
+    type,
+    number: rawData.number ?? "",
+    date: formatDateReadable(rawData.date),
+    dueDate: rawData.dueDate ? formatDateReadable(rawData.dueDate) : undefined,
+    from: rawData.from ?? { name: "" },
+    to: rawData.to ?? { name: "" },
+    items,
+    subtotal,
+    taxRate: rawData.taxRate,
+    taxAmount,
+    discountAmount: rawData.discountAmount,
+    total,
+    notes: rawData.notes || defaultNotes[type],
+    paymentTerms: rawData.paymentTerms || defaultPaymentTerms[type],
+    paymentMethod: rawData.paymentMethod,
+    memo: rawData.memo,
+  };
+}
+
 export async function generateDocument(
   rawData: Partial<DocumentData>,
   type: "invoice" | "receipt" | "statement"
 ): Promise<DocumentData> {
+  // If no API key, use local formatting
+  if (!anthropic) {
+    return buildLocalDocument(rawData, type);
+  }
+
   const prompt = `You are a professional document formatter. Given the following ${type} data, enhance and complete it into a professional, well-structured document.
 
 Input data:
@@ -93,7 +145,7 @@ Required JSON structure:
   const stream = anthropic.messages.stream({
     model: "claude-opus-4-6",
     max_tokens: 4096,
-    thinking: { type: "adaptive" },
+    thinking: { type: "enabled", budget_tokens: 2000 },
     messages: [{ role: "user", content: prompt }],
   });
 
