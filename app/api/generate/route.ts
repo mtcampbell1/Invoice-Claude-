@@ -1,11 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { deductToken } from "@/lib/tokens";
+import { deductToken, deductGuestToken } from "@/lib/tokens";
 import { generateDocument } from "@/lib/claude";
 import { prisma } from "@/lib/db";
 
-export async function POST(req: Request) {
+function getClientIp(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
+
+export async function POST(req: NextRequest) {
   try {
     const { type, data } = await req.json();
 
@@ -18,8 +26,8 @@ export async function POST(req: Request) {
 
     const session = await getServerSession(authOptions);
 
-    // Logged-in users: deduct a token
     if (session?.user?.id) {
+      // Logged-in users: deduct from their account token pool
       const success = await deductToken(session.user.id);
       if (!success) {
         return NextResponse.json(
@@ -28,6 +36,24 @@ export async function POST(req: Request) {
               "No tokens remaining. Please upgrade your plan or wait for your tokens to reset.",
           },
           { status: 402 }
+        );
+      }
+    } else {
+      // Guests: 3 tokens per week tracked by IP
+      const ip = getClientIp(req);
+      const result = await deductGuestToken(ip);
+      if (!result.allowed) {
+        const resetsAt = result.resetsAt.toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "short",
+          day: "numeric",
+        });
+        return NextResponse.json(
+          {
+            error: `You've used your 3 free documents for this week. Resets on ${resetsAt}. Sign up for a free account to get more.`,
+            resetsAt: result.resetsAt,
+          },
+          { status: 429 }
         );
       }
     }

@@ -76,3 +76,11 @@ model Document {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model GuestUsage {
+  id        String   @id @default(cuid())
+  ip        String   @unique
+  tokens    Int      @default(3)
+  weekStart DateTime @default(now())
+  createdAt DateTime @default(now())
+}

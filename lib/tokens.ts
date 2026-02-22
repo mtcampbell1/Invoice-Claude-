@@ -115,6 +115,57 @@ export async function deductToken(userId: string): Promise<boolean> {
   return true;
 }
 
+const GUEST_WEEKLY_TOKENS = 3;
+
+function currentWeekStart(): Date {
+  const now = new Date();
+  const day = now.getUTCDay(); // 0 = Sunday
+  const diff = now.getUTCDate() - day;
+  const weekStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), diff));
+  weekStart.setUTCHours(0, 0, 0, 0);
+  return weekStart;
+}
+
+/**
+ * Check and deduct a token for an anonymous guest identified by IP.
+ * Returns { allowed: true } or { allowed: false, tokensRemaining: 0, resetsAt: Date }
+ */
+export async function deductGuestToken(
+  ip: string
+): Promise<{ allowed: boolean; tokensRemaining: number; resetsAt: Date }> {
+  const weekStart = currentWeekStart();
+  const resetsAt = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  // Find or create the record for this IP
+  const existing = await prisma.guestUsage.findUnique({ where: { ip } });
+
+  if (!existing) {
+    // First use ever — create with 2 remaining (just used 1)
+    await prisma.guestUsage.create({
+      data: { ip, tokens: GUEST_WEEKLY_TOKENS - 1, weekStart },
+    });
+    return { allowed: true, tokensRemaining: GUEST_WEEKLY_TOKENS - 1, resetsAt };
+  }
+
+  // Check if a new week has started since their last use
+  const needsReset = existing.weekStart < weekStart;
+  const currentTokens = needsReset ? GUEST_WEEKLY_TOKENS : existing.tokens;
+
+  if (currentTokens <= 0) {
+    return { allowed: false, tokensRemaining: 0, resetsAt };
+  }
+
+  await prisma.guestUsage.update({
+    where: { ip },
+    data: {
+      tokens: currentTokens - 1,
+      weekStart: needsReset ? weekStart : undefined,
+    },
+  });
+
+  return { allowed: true, tokensRemaining: currentTokens - 1, resetsAt };
+}
+
 /**
  * Get token status for a user.
  */
