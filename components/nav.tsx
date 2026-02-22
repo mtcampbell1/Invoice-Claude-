@@ -1,15 +1,16 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   FileText,
   Users,
   Settings,
-  Zap,
   LogOut,
+  LogIn,
+  UserPlus,
 } from "lucide-react";
 
 const navItems = [
@@ -17,11 +18,11 @@ const navItems = [
   { href: "/create/invoice", label: "New Invoice", icon: FileText },
   { href: "/contacts", label: "Contacts", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/upgrade", label: "Upgrade", icon: Zap },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-gray-200 bg-white">
@@ -57,14 +58,33 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-100">
-        <button
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          Sign out
-        </button>
+      <div className="p-4 border-t border-gray-100 space-y-1">
+        {session ? (
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            Sign out
+          </button>
+        ) : (
+          <>
+            <Link
+              href="/sign-in"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+            >
+              <LogIn className="h-4 w-4 shrink-0" />
+              Sign in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+            >
+              <UserPlus className="h-4 w-4 shrink-0" />
+              Create account
+            </Link>
+          </>
+        )}
       </div>
     </aside>
   );

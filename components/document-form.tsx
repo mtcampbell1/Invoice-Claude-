@@ -1,13 +1,18 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { DocumentDownloadButton } from "@/components/document-pdf";
 import type { DocumentData } from "@/lib/claude";
 import { generateDocumentNumber, formatCurrency } from "@/lib/utils";
 import { Plus, Trash2, Zap } from "lucide-react";
+
+const DocumentDownloadButton = dynamic(
+  () => import("@/components/document-pdf").then((m) => m.DocumentDownloadButton),
+  { ssr: false }
+);
 
 interface LineItem {
   description: string;
@@ -299,7 +304,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
           <h1 className="text-2xl font-bold text-gray-900 capitalize">
             New {type}
           </h1>
-          <p className="text-sm text-gray-500">Uses 1 token</p>
+          <p className="text-sm text-gray-500">Free · Download as PDF</p>
         </div>
         <Button type="submit" loading={loading} size="lg">
           <Zap className="mr-2 h-4 w-4" />
@@ -605,7 +610,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
       <div className="flex justify-end">
         <Button type="submit" loading={loading} size="lg">
           <Zap className="mr-2 h-4 w-4" />
-          Generate {type} with AI (1 token)
+          Generate {type}
         </Button>
       </div>
     </form>

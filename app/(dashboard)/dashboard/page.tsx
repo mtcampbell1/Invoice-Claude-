@@ -2,9 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { PLANS } from "@/lib/tokens";
 import Link from "next/link";
-import { FileText, Receipt, BarChart3, Plus, Zap } from "lucide-react";
+import { FileText, Receipt, BarChart3, Plus, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -16,97 +15,76 @@ const docActions = [
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
-  if (!session) return null;
 
-  const [user, documents] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.user.id } }),
-    prisma.document.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-  ]);
-
-  const plan = PLANS[user?.plan as keyof typeof PLANS] ?? PLANS.free;
+  const documents = session
+    ? await prisma.document.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      })
+    : [];
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500">Create and manage your documents</p>
+        <h1 className="text-2xl font-bold text-gray-900">Create a document</h1>
+        <p className="text-sm text-gray-500">
+          Fill in the details and download a professional PDF instantly
+        </p>
       </div>
-
-      {/* Token status card */}
-      <Card className="bg-gradient-to-br from-indigo-50 to-white">
-        <CardContent className="flex items-center justify-between py-5">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100">
-              <Zap className="h-6 w-6 text-indigo-600" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">{plan.name} Plan</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {user?.tokens ?? 0}
-                <span className="text-base font-normal text-gray-400">
-                  {" "}/{plan.tokens} tokens
-                </span>
-              </p>
-              <p className="text-xs text-gray-400">
-                Resets {plan.resetPeriod}
-              </p>
-            </div>
-          </div>
-          {user?.plan === "free" && (
-            <Link href="/upgrade">
-              <Button size="sm">Upgrade for more</Button>
-            </Link>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Quick actions */}
-      <div>
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
-          Create a document
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {docActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Link key={action.type} href={action.href}>
-                <Card className="cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all">
-                  <CardContent className="flex items-center gap-4 py-5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50">
-                      <Icon className="h-5 w-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {action.label}
-                      </p>
-                      <p className="text-xs text-gray-400">Uses 1 token</p>
-                    </div>
-                    <Plus className="ml-auto h-4 w-4 text-gray-400" />
-                  </CardContent>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {docActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Link key={action.type} href={action.href}>
+              <Card className="cursor-pointer hover:border-indigo-300 hover:shadow-md transition-all">
+                <CardContent className="flex items-center gap-4 py-5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50">
+                    <Icon className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">{action.label}</p>
+                    <p className="text-xs text-gray-400">Free · Download PDF</p>
+                  </div>
+                  <Plus className="ml-auto h-4 w-4 text-gray-400" />
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
 
-      {/* Recent documents */}
+      {/* Recent documents (logged-in users only) */}
       <div>
         <h2 className="mb-4 text-lg font-semibold text-gray-900">
           Recent documents
         </h2>
-        {documents.length === 0 ? (
+        {!session ? (
+          <Card>
+            <CardContent className="py-10 text-center">
+              <LogIn className="mx-auto mb-3 h-9 w-9 text-gray-300" />
+              <p className="font-medium text-gray-700">Sign in to save your history</p>
+              <p className="mt-1 text-sm text-gray-400">
+                Your documents will be saved so you can access them anytime
+              </p>
+              <div className="mt-4 flex justify-center gap-3">
+                <Link href="/sign-in">
+                  <Button variant="outline" size="sm">Sign in</Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button size="sm">Create account</Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        ) : documents.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <FileText className="mx-auto mb-3 h-10 w-10 text-gray-300" />
               <p className="text-gray-500">No documents yet</p>
-              <p className="text-sm text-gray-400">
-                Create your first invoice above
-              </p>
+              <p className="text-sm text-gray-400">Create your first invoice above</p>
             </CardContent>
           </Card>
         ) : (
