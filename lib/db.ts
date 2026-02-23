@@ -6,8 +6,11 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL is not set");
+  }
   const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
+    connectionString: process.env.DATABASE_URL,
   });
 
   return new PrismaClient({
@@ -16,6 +19,25 @@ function createPrismaClient() {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+let _client: PrismaClient | undefined;
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+function getClient(): PrismaClient {
+  if (!_client) {
+    _client = globalForPrisma.prisma ?? createPrismaClient();
+    if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = _client;
+  }
+  return _client;
+}
+
+// Lazy proxy so the Prisma client is only created when first accessed at runtime,
+// not during Next.js build-time module evaluation.
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_, prop) {
+    const client = getClient();
+    const value = (client as any)[prop];
+    if (typeof value === "function") {
+      return value.bind(client);
+    }
+    return value;
+  },
+});
