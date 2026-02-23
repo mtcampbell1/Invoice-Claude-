@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { stripe, STRIPE_PLANS } from "@/lib/stripe";
+import { getStripe, STRIPE_PLANS } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 
 export async function POST(req: Request) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-  const checkoutSession = await stripe.checkout.sessions.create({
+  const checkoutSession = await getStripe().checkout.sessions.create({
     mode: "subscription",
     payment_method_types: ["card"],
     line_items: [
