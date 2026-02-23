@@ -8,7 +8,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  let session = null;
+  try {
+    session = await getServerSession(authOptions);
+  } catch {
+    // Treat as guest if auth check fails
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
