@@ -1,13 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { DocumentData } from "@/lib/claude";
 import { generateDocumentNumber, formatCurrency } from "@/lib/utils";
-import { Plus, Trash2, Zap } from "lucide-react";
+import { Plus, Trash2, Zap, UserPlus } from "lucide-react";
 
 const DocumentDownloadButton = dynamic(
   () => import("@/components/document-pdf").then((m) => m.DocumentDownloadButton),
@@ -46,6 +47,7 @@ interface DocumentFormProps {
 
 export function DocumentForm({ type }: DocumentFormProps) {
   const router = useRouter();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [generated, setGenerated] = useState<DocumentData | null>(null);
@@ -219,6 +221,24 @@ export function DocumentForm({ type }: DocumentFormProps) {
             <DocumentDownloadButton data={generated} />
           </div>
         </div>
+
+        {/* Guest upsell */}
+        {!session && (
+          <div className="flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-4">
+            <div>
+              <p className="font-semibold text-indigo-900">Skip re-typing next time</p>
+              <p className="text-sm text-indigo-700">
+                Save your business info, client contacts, and past invoices — free with an account.
+              </p>
+            </div>
+            <a href="/sign-up">
+              <Button size="sm" className="ml-4 shrink-0">
+                <UserPlus className="mr-2 h-4 w-4" />
+                Create free account
+              </Button>
+            </a>
+          </div>
+        )}
 
         {/* Preview */}
         <Card>

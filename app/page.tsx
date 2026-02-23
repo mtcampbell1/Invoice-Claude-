@@ -40,7 +40,7 @@ const plans = [
       "AI-enhanced formatting",
     ],
     cta: "Get Started Free",
-    href: "/sign-up",
+    href: "/create/invoice",
     highlight: false,
   },
   {
@@ -147,7 +147,7 @@ export default function LandingPage() {
           Start free — no credit card required.
         </p>
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <Link href="/sign-up">
+          <Link href="/create/invoice">
             <Button size="lg" className="min-w-[160px]">
               Start for free
             </Button>
