@@ -7,6 +7,7 @@ import {
   StyleSheet,
   PDFDownloadLink,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 import type { DocumentData } from "@/lib/claude";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 32,
+  },
+  logo: {
+    width: 120,
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,
@@ -152,6 +157,9 @@ function InvoicePDF({ data }: { data: DocumentData }) {
         {/* Header */}
         <View style={styles.header}>
           <View>
+            {data.logoUrl && (
+              <Image src={data.logoUrl} style={styles.logo} />
+            )}
             <Text style={styles.title}>{title}</Text>
             <Text style={styles.addressName}>{data.from.name}</Text>
           </View>
