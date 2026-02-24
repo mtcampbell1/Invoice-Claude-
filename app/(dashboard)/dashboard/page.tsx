@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import Link from "next/link";
-import { FileText, Receipt, BarChart3, Plus, LogIn } from "lucide-react";
+import { FileText, Receipt, BarChart3, Plus, LogIn, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -91,8 +91,9 @@ export default async function DashboardPage() {
           <Card>
             <div className="divide-y divide-gray-50">
               {documents.map((doc) => (
-                <div
+                <Link
                   key={doc.id}
+                  href={`/documents/${doc.id}`}
                   className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
@@ -123,8 +124,9 @@ export default async function DashboardPage() {
                     >
                       {doc.type}
                     </span>
+                    <Download className="h-4 w-4 text-gray-300" />
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </Card>

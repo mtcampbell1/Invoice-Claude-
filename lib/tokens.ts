@@ -76,6 +76,25 @@ export const PLANS = {
 export type PlanName = keyof typeof PLANS;
 
 /**
+ * Returns the effective permissions for a user, taking into account both their
+ * plan AND whether they've ever purchased a token pack. Token pack purchasers
+ * get all Pro-level perks (unlimited contacts, logo, etc.) regardless of plan.
+ */
+export function getUserPerms(user: { plan: string; tokenPackPurchased: boolean }) {
+  const plan = PLANS[user.plan as PlanName] ?? PLANS.free;
+  if (user.tokenPackPurchased) {
+    return {
+      ...plan,
+      canSaveContacts: true,
+      canSaveBusiness: true,
+      canUploadLogo: true,
+      maxContacts: null as number | null,
+    };
+  }
+  return plan;
+}
+
+/**
  * Check if user's tokens need to be reset and reset if necessary.
  * Only resets `tokens` (the recurring allocation) — bonusTokens are never touched.
  */

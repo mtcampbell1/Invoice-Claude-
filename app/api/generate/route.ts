@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { deductToken, deductGuestToken, PLANS } from "@/lib/tokens";
+import { deductToken, deductGuestToken, getUserPerms } from "@/lib/tokens";
 import { generateDocument } from "@/lib/claude";
 import { prisma } from "@/lib/db";
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json(
             {
               error:
-                "No tokens remaining. Please upgrade your plan or wait for your tokens to reset.",
+                "No tokens remaining. Buy a token pack or upgrade your plan to continue.",
             },
             { status: 402 }
           );
@@ -77,10 +77,11 @@ export async function POST(req: NextRequest) {
           where: { id: session.user.id },
           include: { business: true },
         });
-        const plan =
-          PLANS[(user?.plan ?? "free") as keyof typeof PLANS] ?? PLANS.free;
-        const canUseLogo = plan.canUploadLogo || (user?.tokenPackPurchased ?? false);
-        if (canUseLogo && user?.business?.logoUrl) {
+        const perms = getUserPerms({
+          plan: user?.plan ?? "free",
+          tokenPackPurchased: user?.tokenPackPurchased ?? false,
+        });
+        if (perms.canUploadLogo && user?.business?.logoUrl) {
           document.logoUrl = user.business.logoUrl;
         }
       } catch {

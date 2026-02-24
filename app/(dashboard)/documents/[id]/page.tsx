@@ -1,0 +1,25 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { redirect, notFound } from "next/navigation";
+import { ReprintView } from "./reprint-view";
+import type { DocumentData } from "@/lib/claude";
+
+export default async function DocumentPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) redirect("/sign-in");
+
+  const doc = await prisma.document.findFirst({
+    where: { id: params.id, userId: session.user.id },
+  });
+
+  if (!doc) notFound();
+
+  const data = JSON.parse(doc.data) as DocumentData;
+
+  return <ReprintView data={data} />;
+}
