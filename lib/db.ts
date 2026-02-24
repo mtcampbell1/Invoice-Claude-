@@ -9,9 +9,27 @@ function createPrismaClient() {
   if (!process.env.DATABASE_URL) {
     throw new Error("DATABASE_URL is not set");
   }
-  const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL,
-  });
+
+  let pool: import("pg").Pool;
+
+  if (process.env.DATABASE_PASSWORD) {
+    // Use DATABASE_PASSWORD directly to avoid URL-encoding issues with special characters
+    const url = new URL(process.env.DATABASE_URL);
+    const { Pool } = require("pg");
+    pool = new Pool({
+      host: url.hostname,
+      port: parseInt(url.port) || 5432,
+      database: url.pathname.slice(1),
+      user: decodeURIComponent(url.username),
+      password: process.env.DATABASE_PASSWORD,
+      ssl: { rejectUnauthorized: false },
+    });
+  } else {
+    const { Pool } = require("pg");
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  }
+
+  const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
     adapter,
