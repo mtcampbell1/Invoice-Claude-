@@ -20,21 +20,43 @@ export async function POST(req: Request) {
 
   switch (event.type) {
     case "checkout.session.completed": {
-      const session = event.data.object as { metadata?: { userId?: string; plan?: string }; subscription?: string; customer?: string };
+      const session = event.data.object as {
+        metadata?: { userId?: string; type?: string; plan?: string; tokens?: string };
+        subscription?: string;
+        customer?: string;
+      };
       const userId = session.metadata?.userId;
-      const plan = session.metadata?.plan as keyof typeof PLANS;
 
-      if (userId && plan && PLANS[plan]) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            plan,
-            tokens: PLANS[plan].tokens,
-            tokensResetAt: new Date(),
-            stripeCustomerId: session.customer as string,
-            stripeSubscriptionId: session.subscription as string,
-          },
-        });
+      if (!userId) break;
+
+      if (session.metadata?.type === "token_pack") {
+        // One-time purchase: credit bonus tokens (never expire/reset)
+        const tokensToAdd = parseInt(session.metadata?.tokens ?? "0", 10);
+        if (tokensToAdd > 0) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              bonusTokens: { increment: tokensToAdd },
+              tokenPackPurchased: true,
+              stripeCustomerId: session.customer as string,
+            },
+          });
+        }
+      } else {
+        // Subscription
+        const plan = session.metadata?.plan as keyof typeof PLANS;
+        if (plan && PLANS[plan]) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              plan,
+              tokens: PLANS[plan].tokens,
+              tokensResetAt: new Date(),
+              stripeCustomerId: session.customer as string,
+              stripeSubscriptionId: session.subscription as string,
+            },
+          });
+        }
       }
       break;
     }
@@ -56,7 +78,6 @@ export async function POST(req: Request) {
     case "invoice.payment_succeeded": {
       const invoice = event.data.object as { subscription?: string };
       if (invoice.subscription) {
-        // Reset tokens on successful renewal
         const user = await prisma.user.findFirst({
           where: { stripeSubscriptionId: invoice.subscription as string },
         });
@@ -65,10 +86,7 @@ export async function POST(req: Request) {
           if (plan) {
             await prisma.user.update({
               where: { id: user.id },
-              data: {
-                tokens: plan.tokens,
-                tokensResetAt: new Date(),
-              },
+              data: { tokens: plan.tokens, tokensResetAt: new Date() },
             });
           }
         }

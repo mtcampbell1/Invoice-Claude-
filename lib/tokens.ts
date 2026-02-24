@@ -6,20 +6,34 @@ export const PLANS = {
     tokens: 3,
     resetPeriod: "weekly" as const,
     price: 0,
-    features: ["3 tokens/week", "Invoices, receipts, statements", "PDF export"],
-    canSaveContacts: false,
-    canSaveBusiness: false,
+    features: [
+      "3 tokens/week",
+      "Invoices, receipts, statements",
+      "PDF export",
+      "1 saved business profile",
+      "Up to 3 saved contacts",
+    ],
+    canSaveContacts: true,
+    canSaveBusiness: true,
     canUploadLogo: false,
+    maxContacts: 3 as number | null,
   },
   basic: {
     name: "Basic",
     tokens: 15,
     resetPeriod: "monthly" as const,
     price: 2.99,
-    features: ["15 tokens/month", "All document types", "PDF export"],
-    canSaveContacts: false,
-    canSaveBusiness: false,
-    canUploadLogo: false,
+    features: [
+      "15 tokens/month",
+      "All document types",
+      "PDF export",
+      "Business logo on documents",
+      "Unlimited contacts",
+    ],
+    canSaveContacts: true,
+    canSaveBusiness: true,
+    canUploadLogo: true,
+    maxContacts: null as number | null,
   },
   pro: {
     name: "Pro",
@@ -30,13 +44,14 @@ export const PLANS = {
       "30 tokens/month",
       "All document types",
       "PDF export",
-      "Save client contacts",
-      "Save business info",
-      "Upload business logo",
+      "Business logo on documents",
+      "Unlimited contacts",
+      "Priority support",
     ],
     canSaveContacts: true,
     canSaveBusiness: true,
     canUploadLogo: true,
+    maxContacts: null as number | null,
   },
   business: {
     name: "Business",
@@ -47,22 +62,22 @@ export const PLANS = {
       "100 tokens/month",
       "All document types",
       "PDF export",
-      "Save client contacts",
-      "Save business info",
-      "Upload business logo",
+      "Business logo on documents",
+      "Unlimited contacts",
       "Priority support",
     ],
     canSaveContacts: true,
     canSaveBusiness: true,
     canUploadLogo: true,
+    maxContacts: null as number | null,
   },
-} as const;
+};
 
 export type PlanName = keyof typeof PLANS;
 
 /**
  * Check if user's tokens need to be reset and reset if necessary.
- * Returns the user with up-to-date token count.
+ * Only resets `tokens` (the recurring allocation) — bonusTokens are never touched.
  */
 export async function checkAndResetTokens(userId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -90,6 +105,7 @@ export async function checkAndResetTokens(userId: string) {
       data: {
         tokens: plan.tokens,
         tokensResetAt: now,
+        // bonusTokens intentionally NOT reset
       },
     });
   }
@@ -98,21 +114,30 @@ export async function checkAndResetTokens(userId: string) {
 }
 
 /**
- * Deduct one token from the user. Returns false if no tokens available.
+ * Deduct one token from the user.
+ * Draws from recurring tokens first, then bonus tokens.
+ * Returns false if neither bucket has tokens.
  */
 export async function deductToken(userId: string): Promise<boolean> {
   const user = await checkAndResetTokens(userId);
 
-  if (user.tokens <= 0) {
-    return false;
+  if (user.tokens > 0) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { tokens: { decrement: 1 } },
+    });
+    return true;
   }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { tokens: { decrement: 1 } },
-  });
+  if (user.bonusTokens > 0) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { bonusTokens: { decrement: 1 } },
+    });
+    return true;
+  }
 
-  return true;
+  return false;
 }
 
 const GUEST_WEEKLY_TOKENS = 3;
@@ -168,13 +193,15 @@ export async function deductGuestToken(
 
 /**
  * Get token status for a user.
+ * Returns combined total of recurring + bonus tokens.
  */
 export async function getTokenStatus(userId: string) {
   const user = await checkAndResetTokens(userId);
   const plan = PLANS[user.plan as PlanName] ?? PLANS.free;
 
   return {
-    tokens: user.tokens,
+    tokens: user.tokens + user.bonusTokens,
+    bonusTokens: user.bonusTokens,
     plan: user.plan,
     planName: plan.name,
     maxTokens: plan.tokens,

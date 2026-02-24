@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { PLANS } from "@/lib/tokens";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -23,20 +22,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-  });
-
-  const plan = PLANS[user?.plan as keyof typeof PLANS] ?? PLANS.free;
-  if (!plan.canSaveBusiness) {
-    return NextResponse.json(
-      { error: "Upgrade to Pro or Business plan to save business info" },
-      { status: 403 }
-    );
-  }
-
   const body = await req.json();
   const { name, address, city, state, zip, country, phone, email, website, taxId } = body;
+
+  if (!name) {
+    return NextResponse.json({ error: "Business name is required" }, { status: 400 });
+  }
 
   const business = await prisma.business.upsert({
     where: { userId: session.user.id },

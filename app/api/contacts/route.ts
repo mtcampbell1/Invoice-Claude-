@@ -10,13 +10,6 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  const plan = PLANS[user?.plan as keyof typeof PLANS] ?? PLANS.free;
-
-  if (!plan.canSaveContacts) {
-    return NextResponse.json([]);
-  }
-
   const contacts = await prisma.contact.findMany({
     where: { userId: session.user.id },
     orderBy: { name: "asc" },
@@ -33,12 +26,20 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
   const plan = PLANS[user?.plan as keyof typeof PLANS] ?? PLANS.free;
+  const maxContacts = plan.maxContacts;
 
-  if (!plan.canSaveContacts) {
-    return NextResponse.json(
-      { error: "Upgrade to Pro or Business plan to save contacts" },
-      { status: 403 }
-    );
+  // Enforce per-plan contact limit (null = unlimited)
+  if (maxContacts !== null) {
+    const count = await prisma.contact.count({ where: { userId: session.user.id } });
+    if (count >= maxContacts) {
+      return NextResponse.json(
+        {
+          error: `Free accounts can save up to ${maxContacts} contacts. Upgrade to save unlimited contacts.`,
+          limitReached: true,
+        },
+        { status: 403 }
+      );
+    }
   }
 
   const body = await req.json();
