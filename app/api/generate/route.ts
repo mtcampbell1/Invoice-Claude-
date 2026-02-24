@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getServerSession } from "next-auth";
+import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { deductToken, deductGuestToken } from "@/lib/tokens";
 import { generateDocument } from "@/lib/claude";
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let session: Awaited<ReturnType<typeof getServerSession>> = null;
+    let session: Session | null = null;
     try {
       session = await getServerSession(authOptions);
     } catch (authErr) {
