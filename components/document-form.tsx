@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { DocumentData } from "@/lib/claude";
 import { generateDocumentNumber, formatCurrency } from "@/lib/utils";
-import { Plus, Trash2, Zap, UserPlus } from "lucide-react";
+import { Plus, Trash2, Zap, UserPlus, FlaskConical } from "lucide-react";
 
 const DocumentDownloadButton = dynamic(
   () => import("@/components/document-pdf").then((m) => m.DocumentDownloadButton),
@@ -136,6 +136,37 @@ export function DocumentForm({ type }: DocumentFormProps) {
       setToEmail(contact.email || "");
       setToAddress(contact.address || "");
     }
+  };
+
+  const fillTestData = () => {
+    setFromName("Acme Consulting LLC");
+    setFromAddress("123 Main Street");
+    setFromCity("Austin");
+    setFromState("TX");
+    setFromZip("78701");
+    setFromPhone("+1 (512) 555-0100");
+    setFromEmail("billing@acmeconsulting.com");
+    setFromTaxId("12-3456789");
+    setToName("Jane Smith");
+    setToCompany("Globex Corp");
+    setToAddress("456 Client Ave");
+    setToCity("San Francisco");
+    setToState("CA");
+    setToZip("94105");
+    setToEmail("jane.smith@globex.com");
+    setDocDate(new Date().toISOString().split("T")[0]);
+    if (type === "invoice") {
+      const due = new Date();
+      due.setDate(due.getDate() + 30);
+      setDueDate(due.toISOString().split("T")[0]);
+    }
+    setItems([
+      { description: "Web Design & Development", quantity: 1, rate: 2500 },
+      { description: "SEO Optimization", quantity: 3, rate: 250 },
+      { description: "Monthly Maintenance", quantity: 2, rate: 150 },
+    ]);
+    setTaxRate("8.25"); // Texas sales tax
+    setNotes("Payment due within 30 days. Please reference invoice number when paying. Thank you for your business!");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -326,10 +357,16 @@ export function DocumentForm({ type }: DocumentFormProps) {
           </h1>
           <p className="text-sm text-gray-500">Free · Download as PDF</p>
         </div>
-        <Button type="submit" loading={loading} size="lg">
-          <Zap className="mr-2 h-4 w-4" />
-          Generate with AI
-        </Button>
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={fillTestData}>
+            <FlaskConical className="mr-2 h-3.5 w-3.5" />
+            Fill test data
+          </Button>
+          <Button type="submit" loading={loading} size="lg">
+            <Zap className="mr-2 h-4 w-4" />
+            Generate with AI
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -585,7 +622,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
                 type="number"
                 min="0"
                 max="100"
-                step="0.1"
+                step="0.01"
                 value={taxRate}
                 onChange={(e) => setTaxRate(e.target.value)}
                 placeholder="0"

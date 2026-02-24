@@ -7,7 +7,15 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, id, ...props }, ref) => {
+  ({ className, label, error, id, type, onClick, ...props }, ref) => {
+    const handleClick =
+      type === "date"
+        ? (e: React.MouseEvent<HTMLInputElement>) => {
+            (e.currentTarget as HTMLInputElement).showPicker?.();
+            onClick?.(e);
+          }
+        : onClick;
+
     return (
       <div className="space-y-1">
         {label && (
@@ -21,8 +29,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={id}
+          type={type}
+          onClick={handleClick}
           className={cn(
             "block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 shadow-sm transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-50 disabled:text-gray-500",
+            type === "date" && "cursor-pointer",
             error && "border-red-500 focus:border-red-500 focus:ring-red-500",
             className
           )}

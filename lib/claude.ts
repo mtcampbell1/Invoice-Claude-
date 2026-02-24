@@ -142,25 +142,27 @@ Required JSON structure:
   "memo": "string or null"
 }`;
 
-  const stream = anthropic.messages.stream({
-    model: "claude-opus-4-6",
-    max_tokens: 4096,
-    thinking: { type: "enabled", budget_tokens: 2000 },
-    messages: [{ role: "user", content: prompt }],
-  });
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 4096,
+      messages: [{ role: "user", content: prompt }],
+    });
 
-  const response = await stream.finalMessage();
+    const textBlock = response.content.find((b) => b.type === "text");
+    if (!textBlock || textBlock.type !== "text") {
+      throw new Error("No text response from Claude");
+    }
 
-  const textBlock = response.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("No text response from Claude");
+    let jsonText = textBlock.text.trim();
+
+    // Strip markdown code fences if present
+    jsonText = jsonText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
+
+    const result = JSON.parse(jsonText) as DocumentData;
+    return result;
+  } catch (err) {
+    console.error("Claude API error, using local fallback:", err);
+    return buildLocalDocument(rawData, type);
   }
-
-  let jsonText = textBlock.text.trim();
-
-  // Strip markdown code fences if present
-  jsonText = jsonText.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
-
-  const result = JSON.parse(jsonText) as DocumentData;
-  return result;
 }
