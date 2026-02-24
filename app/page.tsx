@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Zap, Shield, Download, Check } from "lucide-react";
+import { FileText, Zap, Shield, Download, Check, Receipt, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const features = [
@@ -142,22 +142,38 @@ export default function LandingPage() {
           <br />
           <span className="text-indigo-600">in seconds</span>
         </h1>
-        <p className="mx-auto mb-10 max-w-2xl text-xl text-gray-500">
+        <p className="mx-auto mb-6 max-w-2xl text-xl text-gray-500">
           Create beautiful, AI-enhanced invoices, receipts, and statements.
-          Start free — no credit card required.
+        </p>
+        <p className="mb-8 text-sm font-medium text-gray-400 uppercase tracking-wide">
+          Start free — no credit card required
         </p>
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <Link href="/create/invoice">
-            <Button size="lg" className="min-w-[160px]">
-              Start for free
+            <Button size="lg" className="min-w-[160px] gap-2">
+              <FileText className="h-4 w-4" />
+              Invoice
             </Button>
           </Link>
-          <Link href="#pricing">
-            <Button size="lg" variant="outline" className="min-w-[160px]">
-              View pricing
+          <Link href="/create/receipt">
+            <Button size="lg" className="min-w-[160px] gap-2">
+              <Receipt className="h-4 w-4" />
+              Receipt
+            </Button>
+          </Link>
+          <Link href="/create/statement">
+            <Button size="lg" className="min-w-[160px] gap-2">
+              <FileSpreadsheet className="h-4 w-4" />
+              Statement
             </Button>
           </Link>
         </div>
+        <p className="mt-6 text-sm text-gray-400">
+          or{" "}
+          <Link href="#pricing" className="underline hover:text-gray-600">
+            view pricing
+          </Link>
+        </p>
       </section>
 
       {/* Features */}
