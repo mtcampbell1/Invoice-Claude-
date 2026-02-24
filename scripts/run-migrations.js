@@ -1,5 +1,6 @@
-// Runs the initial migration SQL against the database using pg directly.
-// Uses DATABASE_PASSWORD (if set) to avoid URL-encoding issues with special characters.
+// Runs all migration SQL files (in timestamp order) against the database.
+// Each migration uses IF NOT EXISTS / ADD COLUMN IF NOT EXISTS so re-runs are safe.
+// Uses DATABASE_PASSWORD (if set) to avoid URL-encoding issues with special chars.
 const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
@@ -25,20 +26,29 @@ async function runMigrations() {
       ssl: { rejectUnauthorized: false },
     });
 
-    const sqlPath = path.join(
-      __dirname,
-      "..",
-      "prisma",
-      "migrations",
-      "20260221204603_init",
-      "migration.sql"
-    );
+    const migrationsDir = path.join(__dirname, "..", "prisma", "migrations");
 
-    const sql = fs.readFileSync(sqlPath, "utf8");
+    // Collect all migration SQL files sorted by directory name (chronological)
+    const migrationDirs = fs
+      .readdirSync(migrationsDir)
+      .filter((entry) => {
+        const full = path.join(migrationsDir, entry);
+        return (
+          fs.statSync(full).isDirectory() &&
+          fs.existsSync(path.join(full, "migration.sql"))
+        );
+      })
+      .sort();
+
     const client = await pool.connect();
     try {
-      await client.query(sql);
-      console.log("✓ Database migration completed successfully");
+      for (const dir of migrationDirs) {
+        const sqlPath = path.join(migrationsDir, dir, "migration.sql");
+        const sql = fs.readFileSync(sqlPath, "utf8");
+        await client.query(sql);
+        console.log(`✓ Applied migration: ${dir}`);
+      }
+      console.log("✓ All migrations applied successfully");
     } finally {
       client.release();
     }
