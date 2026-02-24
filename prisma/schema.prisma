@@ -16,6 +16,8 @@ model User {
   name                 String?
   plan                 String    @default("free") // free, basic, pro, business
   tokens               Int       @default(3)
+  bonusTokens          Int       @default(0)
+  tokenPackPurchased   Boolean   @default(false)
   tokensResetAt        DateTime  @default(now())
   stripeCustomerId     String?
   stripeSubscriptionId String?

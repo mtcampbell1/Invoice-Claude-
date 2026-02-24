@@ -79,7 +79,8 @@ export async function POST(req: NextRequest) {
         });
         const plan =
           PLANS[(user?.plan ?? "free") as keyof typeof PLANS] ?? PLANS.free;
-        if (plan.canUploadLogo && user?.business?.logoUrl) {
+        const canUseLogo = plan.canUploadLogo || (user?.tokenPackPurchased ?? false);
+        if (canUseLogo && user?.business?.logoUrl) {
           document.logoUrl = user.business.logoUrl;
         }
       } catch {
