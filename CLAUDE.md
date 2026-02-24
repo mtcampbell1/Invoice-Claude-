@@ -29,3 +29,6 @@ DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET, ANTHROPIC_API_KEY, STRIPE_SECRET_KE
 
 ## Deploy
 Vercel (vercel.json) — pushes to main auto-deploy
+
+## Session Notes / Decisions
+- Hero CTA: 3 buttons (Invoice / Receipt / Statement) instead of single "Start for free". "Start for free" is now tagline text above buttons. "View pricing" demoted to small text link below buttons.
