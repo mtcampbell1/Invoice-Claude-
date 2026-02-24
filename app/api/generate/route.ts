@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { deductToken, deductGuestToken } from "@/lib/tokens";
+import { deductToken, deductGuestToken, PLANS } from "@/lib/tokens";
 import { generateDocument } from "@/lib/claude";
 import { prisma } from "@/lib/db";
 
@@ -67,8 +67,25 @@ export async function POST(req: NextRequest) {
       console.warn("Token deduction failed (DB may be down), allowing generation:", tokenErr);
     }
 
-    // Generate document
+    // Generate document from template
     const document = await generateDocument(data, type);
+
+    // Attach business logo for users on plans that support it
+    if (session?.user?.id) {
+      try {
+        const user = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          include: { business: true },
+        });
+        const plan =
+          PLANS[(user?.plan ?? "free") as keyof typeof PLANS] ?? PLANS.free;
+        if (plan.canUploadLogo && user?.business?.logoUrl) {
+          document.logoUrl = user.business.logoUrl;
+        }
+      } catch {
+        // Non-fatal: logo won't appear but document is still generated
+      }
+    }
 
     // Save to database for logged-in users only
     if (session?.user?.id) {

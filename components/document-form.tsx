@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { DocumentData } from "@/lib/claude";
 import { generateDocumentNumber, formatCurrency } from "@/lib/utils";
-import { Plus, Trash2, Zap, UserPlus, FlaskConical } from "lucide-react";
+import { Plus, Trash2, FileText, UserPlus, FlaskConical, ImageIcon } from "lucide-react";
 
 const DocumentDownloadButton = dynamic(
   () => import("@/components/document-pdf").then((m) => m.DocumentDownloadButton),
@@ -39,6 +39,7 @@ interface Business {
   phone?: string | null;
   email?: string | null;
   taxId?: string | null;
+  logoUrl?: string | null;
 }
 
 interface DocumentFormProps {
@@ -271,6 +272,24 @@ export function DocumentForm({ type }: DocumentFormProps) {
           </div>
         )}
 
+        {/* Logo upsell — shown when the generated document has no logo */}
+        {!generated.logoUrl && (
+          <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+            <div>
+              <p className="font-semibold text-amber-900">Add your business logo</p>
+              <p className="text-sm text-amber-700">
+                Upgrade to Pro to include your logo on every invoice, receipt, and statement.
+              </p>
+            </div>
+            <a href={session ? "/upgrade" : "/sign-up"}>
+              <Button size="sm" variant="outline" className="ml-4 shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100">
+                <ImageIcon className="mr-2 h-4 w-4" />
+                {session ? "Upgrade to Pro" : "Get started"}
+              </Button>
+            </a>
+          </div>
+        )}
+
         {/* Preview */}
         <Card>
           <CardHeader>
@@ -355,7 +374,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
           <h1 className="text-2xl font-bold text-gray-900 capitalize">
             New {type}
           </h1>
-          <p className="text-sm text-gray-500">Free · Download as PDF</p>
+          <p className="text-sm text-gray-500">Download as PDF</p>
         </div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" size="sm" onClick={fillTestData}>
@@ -363,8 +382,8 @@ export function DocumentForm({ type }: DocumentFormProps) {
             Fill test data
           </Button>
           <Button type="submit" loading={loading} size="lg">
-            <Zap className="mr-2 h-4 w-4" />
-            Generate with AI
+            <FileText className="mr-2 h-4 w-4" />
+            Generate {type.charAt(0).toUpperCase() + type.slice(1)}
           </Button>
         </div>
       </div>
@@ -439,6 +458,28 @@ export function DocumentForm({ type }: DocumentFormProps) {
               onChange={(e) => setFromTaxId(e.target.value)}
               placeholder="XX-XXXXXXX"
             />
+            {/* Logo upsell */}
+            {!business?.logoUrl && (
+              <div className="mt-1 flex items-center justify-between rounded-lg border border-dashed border-indigo-200 bg-indigo-50 px-3 py-2.5 text-xs text-indigo-700">
+                <span className="flex items-center gap-1.5">
+                  <ImageIcon className="h-3.5 w-3.5 shrink-0" />
+                  Add your logo for a professional look.
+                </span>
+                {!session ? (
+                  <a href="/sign-up" className="ml-2 shrink-0 font-semibold underline">
+                    Sign up free →
+                  </a>
+                ) : !business ? (
+                  <a href="/upgrade" className="ml-2 shrink-0 font-semibold underline">
+                    Upgrade to Pro →
+                  </a>
+                ) : (
+                  <a href="/settings" className="ml-2 shrink-0 font-semibold underline">
+                    Add in Settings →
+                  </a>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -666,8 +707,8 @@ export function DocumentForm({ type }: DocumentFormProps) {
 
       <div className="flex justify-end">
         <Button type="submit" loading={loading} size="lg">
-          <Zap className="mr-2 h-4 w-4" />
-          Generate {type}
+          <FileText className="mr-2 h-4 w-4" />
+          Generate {type.charAt(0).toUpperCase() + type.slice(1)}
         </Button>
       </div>
     </form>
