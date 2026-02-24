@@ -165,7 +165,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
       { description: "SEO Optimization", quantity: 3, rate: 250 },
       { description: "Monthly Maintenance", quantity: 2, rate: 150 },
     ]);
-    setTaxRate("8.25");
+    setTaxRate("8.25"); // Texas sales tax
     setNotes("Payment due within 30 days. Please reference invoice number when paying. Thank you for your business!");
   };
 
@@ -622,7 +622,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
                 type="number"
                 min="0"
                 max="100"
-                step="0.1"
+                step="0.01"
                 value={taxRate}
                 onChange={(e) => setTaxRate(e.target.value)}
                 placeholder="0"
