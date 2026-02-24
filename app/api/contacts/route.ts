@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { PLANS } from "@/lib/tokens";
+import { getUserPerms } from "@/lib/tokens";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -25,8 +25,11 @@ export async function POST(req: Request) {
   }
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  const plan = PLANS[user?.plan as keyof typeof PLANS] ?? PLANS.free;
-  const maxContacts = plan.maxContacts;
+  const perms = getUserPerms({
+    plan: user?.plan ?? "free",
+    tokenPackPurchased: user?.tokenPackPurchased ?? false,
+  });
+  const maxContacts = perms.maxContacts;
 
   // Enforce per-plan contact limit (null = unlimited)
   if (maxContacts !== null) {
