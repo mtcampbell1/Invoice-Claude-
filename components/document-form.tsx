@@ -299,6 +299,12 @@ export function DocumentForm({ type }: DocumentFormProps) {
         <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm" style={{ height: "80vh" }}>
           <DocumentPDFViewer data={generated} />
         </div>
+
+        {/* Download bar below viewer */}
+        <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-5 py-3">
+          <span className="text-sm text-gray-500">{generated.number} · {generated.to.name}</span>
+          <DocumentDownloadButton data={generated} />
+        </div>
       </div>
     );
   }
