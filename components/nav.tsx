@@ -11,6 +11,7 @@ import {
   LogOut,
   LogIn,
   UserPlus,
+  Plus,
 } from "lucide-react";
 
 const navItems = [
@@ -20,12 +21,19 @@ const navItems = [
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
+const bottomNavItems = [
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/create/invoice", label: "New", icon: Plus },
+  { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/settings", label: "Settings", icon: Settings },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-gray-200 bg-white">
+    <aside className="hidden lg:flex h-full w-64 flex-col border-r border-gray-200 bg-white">
       <div className="flex items-center gap-2 px-6 py-5 border-b border-gray-100">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
           <FileText className="h-4 w-4 text-white" />
@@ -87,5 +95,52 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+  );
+}
+
+/** Fixed bottom navigation bar — shown only on mobile (hidden on lg+) */
+export function BottomNav() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-stretch border-t border-gray-200 bg-white lg:hidden">
+      {bottomNavItems.map((item) => {
+        const Icon = item.icon;
+        const isActive =
+          pathname === item.href ||
+          (item.href !== "/dashboard" && pathname.startsWith(item.href));
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "flex flex-1 flex-col items-center justify-center gap-0.5 py-3 text-xs font-medium transition-colors",
+              isActive ? "text-indigo-600" : "text-gray-400"
+            )}
+          >
+            <Icon className={cn("h-5 w-5", isActive ? "text-indigo-600" : "text-gray-400")} />
+            {item.label}
+          </Link>
+        );
+      })}
+      {session ? (
+        <button
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-3 text-xs font-medium text-gray-400 transition-colors"
+        >
+          <LogOut className="h-5 w-5" />
+          Sign out
+        </button>
+      ) : (
+        <Link
+          href="/sign-in"
+          className="flex flex-1 flex-col items-center justify-center gap-0.5 py-3 text-xs font-medium text-gray-400"
+        >
+          <LogIn className="h-5 w-5" />
+          Sign in
+        </Link>
+      )}
+    </nav>
   );
 }
