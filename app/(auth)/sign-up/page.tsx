@@ -1,13 +1,18 @@
 "use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Only allow relative paths to prevent open-redirect abuse
+  const rawRedirect = searchParams.get("redirect") || "";
+  const redirectTo = rawRedirect.startsWith("/") ? rawRedirect : "/dashboard";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,8 +52,13 @@ export default function SignUpPage() {
     });
 
     setLoading(false);
-    router.push("/dashboard");
+    router.push(redirectTo);
   };
+
+  const signInHref =
+    redirectTo !== "/dashboard"
+      ? `/sign-in?redirect=${encodeURIComponent(redirectTo)}`
+      : "/sign-in";
 
   return (
     <div className="w-full max-w-sm">
@@ -100,7 +110,7 @@ export default function SignUpPage() {
       <p className="mt-4 text-center text-sm text-gray-500">
         Already have an account?{" "}
         <Link
-          href="/sign-in"
+          href={signInHref}
           className="font-medium text-indigo-600 hover:text-indigo-700"
         >
           Sign in

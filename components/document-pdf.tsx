@@ -92,10 +92,10 @@ const styles = StyleSheet.create({
     padding: "8 12",
     borderBottom: "1 solid #f3f4f6",
   },
-  colDesc: { flex: 3 },
-  colQty: { flex: 1, textAlign: "center" },
-  colRate: { flex: 1.5, textAlign: "right" },
-  colAmount: { flex: 1.5, textAlign: "right" },
+  colDesc: { width: "48%" },
+  colQty: { width: "12%", textAlign: "center" },
+  colRate: { width: "20%", textAlign: "right" },
+  colAmount: { width: "20%", textAlign: "right" },
   headerText: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
@@ -221,14 +221,14 @@ function InvoicePDF({ data }: { data: DocumentData }) {
 
         {/* Line Items Table */}
         <View style={styles.table}>
-          <View style={styles.tableHeader}>
+          <View style={styles.tableHeader} wrap={false}>
             <Text style={[styles.colDesc, styles.headerText]}>Description</Text>
             <Text style={[styles.colQty, styles.headerText]}>Qty</Text>
             <Text style={[styles.colRate, styles.headerText]}>Rate</Text>
             <Text style={[styles.colAmount, styles.headerText]}>Amount</Text>
           </View>
           {data.items.map((item, i) => (
-            <View key={i} style={styles.tableRow}>
+            <View key={i} style={styles.tableRow} wrap={false}>
               <Text style={styles.colDesc}>{item.description}</Text>
               <Text style={[styles.colQty, { textAlign: "center" }]}>
                 {item.quantity}
