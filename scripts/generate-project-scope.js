@@ -2,7 +2,7 @@ const PDFDocument = require('/tmp/pdftools/node_modules/pdfkit');
 const fs = require('fs');
 const path = require('path');
 
-const doc = new PDFDocument({ margin: 60, size: 'LETTER' });
+const doc = new PDFDocument({ margin: 60, size: 'LETTER', bufferPages: true });
 const out = path.join('/home/user/Invoice-Claude-', 'InvoiceClaude-ProjectScope.pdf');
 doc.pipe(fs.createWriteStream(out));
 
@@ -26,14 +26,18 @@ function sectionHeading(title) {
   doc.rect(60, ty - 4, 492, 24).fill(INDIGO).stroke(INDIGO);
   doc.fillColor(WHITE).font('Helvetica-Bold').fontSize(12)
     .text(title, 68, ty + 2, { width: 476 });
+  // Reset doc.x to left margin so subsequent calls aren't offset
+  doc.x = doc.page.margins.left;
   doc.fillColor(BLACK).font('Helvetica').fontSize(10);
   doc.moveDown(1.2);
 }
 
 function subHeading(title) {
   doc.moveDown(0.4);
+  doc.x = doc.page.margins.left;
   doc.fillColor(INDIGO).font('Helvetica-Bold').fontSize(10.5).text(title);
   doc.fillColor(GRAY).font('Helvetica').fontSize(9.5);
+  doc.x = doc.page.margins.left;
   doc.moveDown(0.3);
 }
 
@@ -42,9 +46,13 @@ function body(text, opts = {}) {
 }
 
 function bullet(text) {
-  const bx = doc.x;
-  doc.fillColor(INDIGO).text('•', bx, doc.y, { continued: true, width: 10 });
-  doc.fillColor(GRAY).text('  ' + text, { lineGap: 2 });
+  // Use continued:true WITHOUT a width constraint — specifying width:10 infects
+  // the continuation call and renders each character on its own line.
+  doc.fillColor(INDIGO).font('Helvetica').fontSize(9.5)
+    .text('• ', { continued: true, lineBreak: false });
+  doc.fillColor(GRAY).text(text, { lineGap: 2 });
+  // Reset doc.x — continued:true advances it by the bullet width each call
+  doc.x = doc.page.margins.left;
 }
 
 function kv(key, val) {
@@ -61,8 +69,10 @@ function divider() {
 
 function codeBlock(lines) {
   doc.moveDown(0.3);
-  const startY = doc.y;
   const textH = lines.length * 13 + 10;
+  const BOTTOM = doc.page.height - doc.page.margins.bottom;
+  if (doc.y + textH > BOTTOM) doc.addPage();
+  const startY = doc.y;
   doc.rect(60, startY, 492, textH).fill('#f3f4f6').stroke('#e5e7eb');
   doc.fillColor('#374151').font('Courier').fontSize(8);
   lines.forEach((line, i) => {
@@ -70,12 +80,15 @@ function codeBlock(lines) {
   });
   doc.font('Helvetica').fillColor(GRAY);
   doc.y = startY + textH + 6;
+  doc.x = doc.page.margins.left;
   doc.moveDown(0.3);
 }
 
 function tableRow(cols, widths, isHeader = false) {
   const startX = 60;
   const rowH = 18;
+  const BOTTOM = doc.page.height - doc.page.margins.bottom;
+  if (doc.y + rowH > BOTTOM) doc.addPage();
   const startY = doc.y;
   if (isHeader) {
     doc.rect(startX, startY, widths.reduce((a,b)=>a+b,0), rowH).fill(INDIGO_L).stroke('#c7d2fe');
@@ -89,6 +102,8 @@ function tableRow(cols, widths, isHeader = false) {
     cx += widths[i];
   });
   doc.y = startY + rowH;
+  // Reset doc.x so subsequent body/bullet calls start from the left margin
+  doc.x = doc.page.margins.left;
   doc.font('Helvetica').fillColor(GRAY);
 }
 
@@ -548,11 +563,16 @@ codeBlock([
 const pages = doc.bufferedPageRange();
 for (let i = 0; i < pages.count; i++) {
   doc.switchToPage(pages.start + i);
+  // y=740 is inside the bottom margin (732–792). Temporarily zero the margin so
+  // PDFKit doesn't treat it as an overflow and add a spurious new page.
+  const savedBottom = doc.page.margins.bottom;
+  doc.page.margins.bottom = 0;
   doc.fillColor('#9ca3af').fontSize(7.5).font('Helvetica')
     .text(
       `InvoiceClaude — Project Scope Document — Feb 2026 — Page ${i + 1} of ${pages.count}`,
       60, 740, { align: 'center', width: 492 }
     );
+  doc.page.margins.bottom = savedBottom;
 }
 
 doc.end();
