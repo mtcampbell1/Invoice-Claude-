@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
   PDFDownloadLink,
+  PDFViewer,
   Font,
   Image,
 } from "@react-pdf/renderer";
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
   },
 });
 
-function InvoicePDF({ data }: { data: DocumentData }) {
+export function InvoicePDF({ data }: { data: DocumentData }) {
   const title =
     data.type === "invoice"
       ? "Invoice"
@@ -309,5 +310,13 @@ export function DocumentDownloadButton({ data }: { data: DocumentData }) {
         </Button>
       )}
     </PDFDownloadLink>
+  );
+}
+
+export function DocumentPDFViewer({ data }: { data: DocumentData }) {
+  return (
+    <PDFViewer width="100%" height="100%" style={{ border: "none" }}>
+      <InvoicePDF data={data} />
+    </PDFViewer>
   );
 }

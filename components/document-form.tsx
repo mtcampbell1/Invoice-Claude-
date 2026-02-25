@@ -15,6 +15,11 @@ const DocumentDownloadButton = dynamic(
   { ssr: false }
 );
 
+const DocumentPDFViewer = dynamic(
+  () => import("@/components/document-pdf").then((m) => m.DocumentPDFViewer),
+  { ssr: false, loading: () => <div className="flex h-full items-center justify-center text-sm text-gray-400">Rendering PDF…</div> }
+);
+
 interface LineItem {
   description: string;
   quantity: number;
@@ -290,79 +295,10 @@ export function DocumentForm({ type }: DocumentFormProps) {
           </div>
         )}
 
-        {/* Preview */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold capitalize">{type} Preview</h2>
-              <span className="text-2xl font-bold text-indigo-600">
-                {formatCurrency(generated.total)}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-6 text-sm">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">From</p>
-                <p className="font-semibold">{generated.from.name}</p>
-                {generated.from.address && <p className="text-gray-500">{generated.from.address}</p>}
-                {generated.from.email && <p className="text-gray-500">{generated.from.email}</p>}
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Bill To</p>
-                <p className="font-semibold">{generated.to.name}</p>
-                {generated.to.company && <p className="text-gray-500">{generated.to.company}</p>}
-                {generated.to.email && <p className="text-gray-500">{generated.to.email}</p>}
-              </div>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="pb-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">Description</th>
-                  <th className="pb-2 text-center text-xs font-semibold uppercase tracking-wide text-gray-400">Qty</th>
-                  <th className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">Rate</th>
-                  <th className="pb-2 text-right text-xs font-semibold uppercase tracking-wide text-gray-400">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {generated.items.map((item, i) => (
-                  <tr key={i}>
-                    <td className="py-2">{item.description}</td>
-                    <td className="py-2 text-center text-gray-500">{item.quantity}</td>
-                    <td className="py-2 text-right text-gray-500">{formatCurrency(item.rate)}</td>
-                    <td className="py-2 text-right font-medium">{formatCurrency(item.amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="ml-auto w-48 space-y-1 text-sm">
-              <div className="flex justify-between text-gray-500">
-                <span>Subtotal</span>
-                <span>{formatCurrency(generated.subtotal)}</span>
-              </div>
-              {generated.taxAmount && generated.taxAmount > 0 && (
-                <div className="flex justify-between text-gray-500">
-                  <span>Tax {generated.taxRate ? `(${generated.taxRate}%)` : ""}</span>
-                  <span>{formatCurrency(generated.taxAmount)}</span>
-                </div>
-              )}
-              <div className="flex justify-between border-t border-gray-200 pt-1 font-bold">
-                <span>Total</span>
-                <span className="text-indigo-600">{formatCurrency(generated.total)}</span>
-              </div>
-            </div>
-            {generated.notes && (
-              <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-                <span className="font-medium">Notes:</span> {generated.notes}
-              </div>
-            )}
-            {generated.paymentTerms && (
-              <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-                <span className="font-medium">Payment Terms:</span> {generated.paymentTerms}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* PDF Preview */}
+        <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm" style={{ height: "80vh" }}>
+          <DocumentPDFViewer data={generated} />
+        </div>
       </div>
     );
   }
