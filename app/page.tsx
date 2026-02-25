@@ -346,7 +346,7 @@ export default function LandingPage() {
                     ))}
                   </ul>
 
-                  <Link href="/sign-up" className="block">
+                  <Link href="/sign-up?redirect=/upgrade" className="block">
                     <Button
                       variant={pack.highlight ? "default" : "outline"}
                       className="w-full"

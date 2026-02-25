@@ -1,13 +1,16 @@
 "use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect") || "";
+  const redirectTo = rawRedirect.startsWith("/") ? rawRedirect : "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -29,9 +32,14 @@ export default function SignInPage() {
     if (result?.error) {
       setError("Invalid email or password");
     } else {
-      router.push("/dashboard");
+      router.push(redirectTo);
     }
   };
+
+  const signUpHref =
+    redirectTo !== "/dashboard"
+      ? `/sign-up?redirect=${encodeURIComponent(redirectTo)}`
+      : "/sign-up";
 
   return (
     <div className="w-full max-w-sm">
@@ -73,7 +81,7 @@ export default function SignInPage() {
       <p className="mt-4 text-center text-sm text-gray-500">
         Don&apos;t have an account?{" "}
         <Link
-          href="/sign-up"
+          href={signUpHref}
           className="font-medium text-indigo-600 hover:text-indigo-700"
         >
           Sign up free
