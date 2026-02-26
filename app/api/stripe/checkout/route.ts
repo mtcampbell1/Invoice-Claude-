@@ -23,6 +23,14 @@ export async function POST(req: Request) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
+  // Guard: Stripe must be configured
+  if (!process.env.STRIPE_SECRET_KEY) {
+    return NextResponse.json(
+      { error: "Payments are not yet configured. Please contact support." },
+      { status: 503 }
+    );
+  }
+
   // ── One-time token pack ──────────────────────────────────────────────────
   if (pack) {
     const packConfig = TOKEN_PACKS[pack as TokenPackId];
@@ -58,6 +66,12 @@ export async function POST(req: Request) {
   const planConfig = STRIPE_PLANS[plan as keyof typeof STRIPE_PLANS];
   if (!planConfig) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+  }
+  if (!planConfig.priceId) {
+    return NextResponse.json(
+      { error: "Plan not configured. Please contact support." },
+      { status: 500 }
+    );
   }
 
   const checkoutSession = await getStripe().checkout.sessions.create({
