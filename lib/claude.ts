@@ -1,3 +1,5 @@
+import { formatDate } from "@/lib/utils";
+
 export interface LineItem {
   description: string;
   quantity: number;
@@ -11,6 +13,7 @@ export interface DocumentData {
   date: string;
   dueDate?: string;
   logoUrl?: string;
+  locale?: string;
   from: {
     name: string;
     address?: string;
@@ -44,26 +47,48 @@ export interface DocumentData {
   memo?: string;
 }
 
-function formatDateReadable(dateStr?: string): string {
-  if (!dateStr)
-    return new Date().toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+function formatDateReadable(dateStr?: string, locale?: string): string {
+  if (!dateStr) return formatDate(new Date(), locale);
   const d = new Date(dateStr);
-  return isNaN(d.getTime())
-    ? dateStr
-    : d.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+  return isNaN(d.getTime()) ? dateStr : formatDate(d, locale);
 }
+
+const defaultNotesByLocale: Record<string, Record<string, string>> = {
+  en: {
+    invoice:
+      "Payment is due within 30 days of the invoice date. Thank you for your business.",
+    receipt:
+      "Thank you for your business! This receipt confirms payment received in full.",
+    statement:
+      "Please review this statement and contact us with any questions.",
+  },
+  es: {
+    invoice:
+      "El pago vence dentro de 30 días a partir de la fecha de la factura. Gracias por su preferencia.",
+    receipt:
+      "¡Gracias por su preferencia! Este recibo confirma el pago recibido en su totalidad.",
+    statement:
+      "Por favor revise este estado de cuenta y contáctenos si tiene alguna pregunta.",
+  },
+};
+
+const defaultPaymentTermsByLocale: Record<string, Record<string, string>> = {
+  en: {
+    invoice: "Net 30",
+    receipt: "Paid in full",
+    statement: "Due upon receipt",
+  },
+  es: {
+    invoice: "Neto 30 días",
+    receipt: "Pagado en su totalidad",
+    statement: "Vence al recibir",
+  },
+};
 
 export async function generateDocument(
   rawData: Partial<DocumentData>,
-  type: "invoice" | "receipt" | "statement"
+  type: "invoice" | "receipt" | "statement",
+  locale = "en"
 ): Promise<DocumentData> {
   const items = (rawData.items ?? []).map((item) => ({
     ...item,
@@ -76,26 +101,18 @@ export async function generateDocument(
   const total =
     subtotal + (taxAmount ?? 0) - (rawData.discountAmount ?? 0);
 
-  const defaultNotes: Record<string, string> = {
-    invoice:
-      "Payment is due within 30 days of the invoice date. Thank you for your business.",
-    receipt:
-      "Thank you for your business! This receipt confirms payment received in full.",
-    statement:
-      "Please review this statement and contact us with any questions.",
-  };
-
-  const defaultPaymentTerms: Record<string, string> = {
-    invoice: "Net 30",
-    receipt: "Paid in full",
-    statement: "Due upon receipt",
-  };
+  const defaultNotes = defaultNotesByLocale[locale] ?? defaultNotesByLocale.en;
+  const defaultPaymentTerms =
+    defaultPaymentTermsByLocale[locale] ?? defaultPaymentTermsByLocale.en;
 
   return {
     type,
     number: rawData.number ?? "",
-    date: formatDateReadable(rawData.date),
-    dueDate: rawData.dueDate ? formatDateReadable(rawData.dueDate) : undefined,
+    date: formatDateReadable(rawData.date, locale),
+    dueDate: rawData.dueDate
+      ? formatDateReadable(rawData.dueDate, locale)
+      : undefined,
+    locale,
     from: rawData.from ?? { name: "" },
     to: rawData.to ?? { name: "" },
     items,

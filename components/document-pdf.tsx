@@ -6,12 +6,69 @@ import {
   View,
   StyleSheet,
   PDFDownloadLink,
+  PDFViewer,
   Font,
   Image,
 } from "@react-pdf/renderer";
 import type { DocumentData } from "@/lib/claude";
+import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+
+// PDF labels by locale — can't use React hooks in PDF components,
+// so we resolve from the data.locale field set during generation
+const pdfLabels: Record<string, Record<string, string>> = {
+  en: {
+    invoice: "Invoice",
+    receipt: "Receipt",
+    statement: "Statement",
+    from: "From",
+    billTo: "Bill To",
+    description: "Description",
+    qty: "Qty",
+    rate: "Rate",
+    amount: "Amount",
+    subtotal: "Subtotal",
+    discount: "Discount",
+    tax: "Tax",
+    total: "Total",
+    paymentTerms: "Payment Terms",
+    notes: "Notes",
+    memo: "Memo",
+    date: "Date",
+    due: "Due",
+    taxId: "Tax ID",
+    downloadPdf: "Download PDF",
+    preparingPdf: "Preparing PDF...",
+  },
+  es: {
+    invoice: "Factura",
+    receipt: "Recibo",
+    statement: "Estado de cuenta",
+    from: "De",
+    billTo: "Facturar a",
+    description: "Descripción",
+    qty: "Cant.",
+    rate: "Precio",
+    amount: "Monto",
+    subtotal: "Subtotal",
+    discount: "Descuento",
+    tax: "Impuesto",
+    total: "Total",
+    paymentTerms: "Términos de pago",
+    notes: "Notas",
+    memo: "Memo",
+    date: "Fecha",
+    due: "Vencimiento",
+    taxId: "RFC / ID Fiscal",
+    downloadPdf: "Descargar PDF",
+    preparingPdf: "Preparando PDF...",
+  },
+};
+
+function getLabels(locale?: string) {
+  return pdfLabels[locale ?? "en"] ?? pdfLabels.en;
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -143,13 +200,18 @@ const styles = StyleSheet.create({
   },
 });
 
-function InvoicePDF({ data }: { data: DocumentData }) {
+export function InvoicePDF({ data }: { data: DocumentData }) {
+  const l = getLabels(data.locale);
+  const locale = data.locale;
+
   const title =
     data.type === "invoice"
-      ? "Invoice"
+      ? l.invoice
       : data.type === "receipt"
-      ? "Receipt"
-      : "Statement";
+      ? l.receipt
+      : l.statement;
+
+  const fmtCurrency = (amount: number) => formatCurrency(amount, "USD", locale);
 
   return (
     <Document>
@@ -165,9 +227,9 @@ function InvoicePDF({ data }: { data: DocumentData }) {
           </View>
           <View style={styles.docInfo}>
             <Text style={styles.docNumber}>{data.number}</Text>
-            <Text style={styles.label}>Date: {data.date}</Text>
+            <Text style={styles.label}>{l.date}: {data.date}</Text>
             {data.dueDate && (
-              <Text style={styles.label}>Due: {data.dueDate}</Text>
+              <Text style={styles.label}>{l.due}: {data.dueDate}</Text>
             )}
           </View>
         </View>
@@ -175,7 +237,7 @@ function InvoicePDF({ data }: { data: DocumentData }) {
         {/* Addresses */}
         <View style={styles.addresses}>
           <View style={styles.addressBlock}>
-            <Text style={styles.sectionLabel}>From</Text>
+            <Text style={styles.sectionLabel}>{l.from}</Text>
             <Text style={styles.addressName}>{data.from.name}</Text>
             {data.from.address && (
               <Text style={styles.addressLine}>{data.from.address}</Text>
@@ -194,11 +256,11 @@ function InvoicePDF({ data }: { data: DocumentData }) {
               <Text style={styles.addressLine}>{data.from.email}</Text>
             )}
             {data.from.taxId && (
-              <Text style={styles.addressLine}>Tax ID: {data.from.taxId}</Text>
+              <Text style={styles.addressLine}>{l.taxId}: {data.from.taxId}</Text>
             )}
           </View>
           <View style={[styles.addressBlock, { textAlign: "right" }]}>
-            <Text style={styles.sectionLabel}>Bill To</Text>
+            <Text style={styles.sectionLabel}>{l.billTo}</Text>
             <Text style={styles.addressName}>{data.to.name}</Text>
             {data.to.company && (
               <Text style={styles.addressLine}>{data.to.company}</Text>
@@ -222,10 +284,10 @@ function InvoicePDF({ data }: { data: DocumentData }) {
         {/* Line Items Table */}
         <View style={styles.table}>
           <View style={styles.tableHeader} wrap={false}>
-            <Text style={[styles.colDesc, styles.headerText]}>Description</Text>
-            <Text style={[styles.colQty, styles.headerText]}>Qty</Text>
-            <Text style={[styles.colRate, styles.headerText]}>Rate</Text>
-            <Text style={[styles.colAmount, styles.headerText]}>Amount</Text>
+            <Text style={[styles.colDesc, styles.headerText]}>{l.description}</Text>
+            <Text style={[styles.colQty, styles.headerText]}>{l.qty}</Text>
+            <Text style={[styles.colRate, styles.headerText]}>{l.rate}</Text>
+            <Text style={[styles.colAmount, styles.headerText]}>{l.amount}</Text>
           </View>
           {data.items.map((item, i) => (
             <View key={i} style={styles.tableRow} wrap={false}>
@@ -234,10 +296,10 @@ function InvoicePDF({ data }: { data: DocumentData }) {
                 {item.quantity}
               </Text>
               <Text style={[styles.colRate, { textAlign: "right" }]}>
-                ${item.rate.toFixed(2)}
+                {fmtCurrency(item.rate)}
               </Text>
               <Text style={[styles.colAmount, { textAlign: "right" }]}>
-                ${item.amount.toFixed(2)}
+                {fmtCurrency(item.amount)}
               </Text>
             </View>
           ))}
@@ -246,28 +308,28 @@ function InvoicePDF({ data }: { data: DocumentData }) {
         {/* Totals */}
         <View style={styles.totals}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Subtotal</Text>
-            <Text style={styles.totalValue}>${data.subtotal.toFixed(2)}</Text>
+            <Text style={styles.totalLabel}>{l.subtotal}</Text>
+            <Text style={styles.totalValue}>{fmtCurrency(data.subtotal)}</Text>
           </View>
           {data.discountAmount && data.discountAmount > 0 && (
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Discount</Text>
+              <Text style={styles.totalLabel}>{l.discount}</Text>
               <Text style={styles.totalValue}>
-                -${data.discountAmount.toFixed(2)}
+                -{fmtCurrency(data.discountAmount)}
               </Text>
             </View>
           )}
           {data.taxAmount && data.taxAmount > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>
-                Tax {data.taxRate ? `(${data.taxRate}%)` : ""}
+                {l.tax} {data.taxRate ? `(${data.taxRate}%)` : ""}
               </Text>
-              <Text style={styles.totalValue}>${data.taxAmount.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>{fmtCurrency(data.taxAmount)}</Text>
             </View>
           )}
           <View style={styles.totalRowFinal}>
-            <Text style={styles.totalFinalLabel}>Total</Text>
-            <Text style={styles.totalFinalValue}>${data.total.toFixed(2)}</Text>
+            <Text style={styles.totalFinalLabel}>{l.total}</Text>
+            <Text style={styles.totalFinalValue}>{fmtCurrency(data.total)}</Text>
           </View>
         </View>
 
@@ -275,19 +337,19 @@ function InvoicePDF({ data }: { data: DocumentData }) {
         <View style={styles.footer}>
           {data.paymentTerms && (
             <View style={{ marginBottom: 12 }}>
-              <Text style={styles.footerLabel}>Payment Terms</Text>
+              <Text style={styles.footerLabel}>{l.paymentTerms}</Text>
               <Text style={styles.footerText}>{data.paymentTerms}</Text>
             </View>
           )}
           {data.notes && (
             <View style={{ marginBottom: 12 }}>
-              <Text style={styles.footerLabel}>Notes</Text>
+              <Text style={styles.footerLabel}>{l.notes}</Text>
               <Text style={styles.footerText}>{data.notes}</Text>
             </View>
           )}
           {data.memo && (
             <View>
-              <Text style={styles.footerLabel}>Memo</Text>
+              <Text style={styles.footerLabel}>{l.memo}</Text>
               <Text style={styles.footerText}>{data.memo}</Text>
             </View>
           )}
@@ -299,15 +361,24 @@ function InvoicePDF({ data }: { data: DocumentData }) {
 
 export function DocumentDownloadButton({ data }: { data: DocumentData }) {
   const filename = `${data.number || data.type}-${data.to.name.replace(/\s+/g, "-")}.pdf`;
+  const l = getLabels(data.locale);
 
   return (
     <PDFDownloadLink document={<InvoicePDF data={data} />} fileName={filename}>
       {({ loading }) => (
         <Button loading={loading} size="lg">
           <Download className="mr-2 h-4 w-4" />
-          {loading ? "Preparing PDF..." : "Download PDF"}
+          {loading ? l.preparingPdf : l.downloadPdf}
         </Button>
       )}
     </PDFDownloadLink>
+  );
+}
+
+export function DocumentPDFViewer({ data }: { data: DocumentData }) {
+  return (
+    <PDFViewer width="100%" height="100%" style={{ border: "none" }}>
+      <InvoicePDF data={data} />
+    </PDFViewer>
   );
 }

@@ -15,7 +15,7 @@ function getClientIp(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { type, data } = await req.json();
+    const { type, data, locale } = await req.json();
 
     if (!type || !["invoice", "receipt", "statement"].includes(type)) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate document from template
-    const document = await generateDocument(data, type);
+    const document = await generateDocument(data, type, locale || "en");
 
     // Attach business logo for users on plans that support it
     if (session?.user?.id) {
