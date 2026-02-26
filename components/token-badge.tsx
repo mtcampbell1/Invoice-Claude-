@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Zap } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 interface TokenStatus {
   tokens: number;
@@ -13,6 +14,7 @@ interface TokenStatus {
 
 export function TokenBadge() {
   const [status, setStatus] = useState<TokenStatus | null>(null);
+  const t = useTranslations("tokenBadge");
 
   useEffect(() => {
     fetch("/api/tokens")
@@ -30,10 +32,10 @@ export function TokenBadge() {
     <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm sm:gap-3 sm:px-4 sm:py-2">
       <Zap className={`h-4 w-4 shrink-0 ${low ? "text-red-500" : "text-indigo-500"}`} />
 
-      {/* Compact on mobile: just the count */}
+      {/* Compact on mobile */}
       <p className={`text-sm font-semibold sm:hidden ${low ? "text-red-600" : "text-gray-900"}`}>
         {status.tokens}
-        <span className="ml-0.5 text-xs font-normal text-gray-400"> tokens</span>
+        <span className="ml-0.5 text-xs font-normal text-gray-400"> {t("tokens")}</span>
       </p>
 
       {/* Full on sm+ */}
@@ -42,7 +44,7 @@ export function TokenBadge() {
           {status.planName} · {status.resetPeriod}
         </p>
         <p className={`text-sm font-semibold ${low ? "text-red-600" : "text-gray-900"}`}>
-          {status.tokens} / {status.maxTokens} tokens
+          {status.tokens} / {status.maxTokens} {t("tokens")}
         </p>
       </div>
 
@@ -60,7 +62,7 @@ export function TokenBadge() {
           href="/upgrade"
           className="rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700"
         >
-          Buy
+          {t("buy")}
         </Link>
       )}
     </div>

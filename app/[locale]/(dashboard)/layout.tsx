@@ -1,9 +1,10 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getTranslations } from "next-intl/server";
 import { Sidebar, BottomNav } from "@/components/nav";
 import { TokenBadge } from "@/components/token-badge";
 import { FileText } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 export default async function DashboardLayout({
   children,
@@ -16,6 +17,8 @@ export default async function DashboardLayout({
   } catch {
     // Treat as guest if auth check fails
   }
+
+  const t = await getTranslations("dashboard");
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -35,14 +38,14 @@ export default async function DashboardLayout({
           <p className="hidden text-sm text-gray-500 lg:block">
             {session ? (
               <>
-                Welcome back,{" "}
+                {t("welcomeBack")}{" "}
                 <span className="font-medium text-gray-900">
                   {session.user.name || session.user.email}
                 </span>
               </>
             ) : (
               <span className="font-medium text-gray-700">
-                Create professional invoices instantly — no sign-up required
+                {t("guestMessage")}
               </span>
             )}
           </p>

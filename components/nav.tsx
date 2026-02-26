@@ -1,7 +1,9 @@
 "use client";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -14,23 +16,18 @@ import {
   Plus,
 } from "lucide-react";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/create/invoice", label: "New Invoice", icon: FileText },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
-const bottomNavItems = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/create/invoice", label: "New", icon: Plus },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const t = useTranslations("nav");
+  const tc = useTranslations("common");
+
+  const navItems = [
+    { href: "/dashboard" as const, label: t("dashboard"), icon: LayoutDashboard },
+    { href: "/create/invoice" as const, label: t("newInvoice"), icon: FileText },
+    { href: "/contacts" as const, label: t("contacts"), icon: Users },
+    { href: "/settings" as const, label: t("settings"), icon: Settings },
+  ];
 
   return (
     <aside className="hidden lg:flex h-full w-64 flex-col border-r border-gray-200 bg-white">
@@ -44,9 +41,11 @@ export function Sidebar() {
       <nav className="flex-1 space-y-1 p-4">
         {navItems.map((item) => {
           const Icon = item.icon;
+          // Strip locale prefix for matching: /es/dashboard → /dashboard
+          const cleanPath = pathname.replace(/^\/(en|es)/, "") || "/";
           const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            cleanPath === item.href ||
+            (item.href !== "/dashboard" && cleanPath.startsWith(item.href));
 
           return (
             <Link
@@ -66,14 +65,17 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-100 space-y-1">
+      <div className="p-4 border-t border-gray-100 space-y-2">
+        <div className="flex items-center justify-between px-3 py-1">
+          <LanguageSwitcher />
+        </div>
         {session ? (
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            Sign out
+            {tc("signOut")}
           </button>
         ) : (
           <>
@@ -82,14 +84,14 @@ export function Sidebar() {
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
             >
               <LogIn className="h-4 w-4 shrink-0" />
-              Sign in
+              {tc("signIn")}
             </Link>
             <Link
               href="/sign-up"
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
             >
               <UserPlus className="h-4 w-4 shrink-0" />
-              Create account
+              {tc("createAccount")}
             </Link>
           </>
         )}
@@ -102,14 +104,24 @@ export function Sidebar() {
 export function BottomNav() {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const t = useTranslations("nav");
+  const tc = useTranslations("common");
+
+  const bottomNavItems = [
+    { href: "/dashboard" as const, label: t("home"), icon: LayoutDashboard },
+    { href: "/create/invoice" as const, label: t("new"), icon: Plus },
+    { href: "/contacts" as const, label: t("contacts"), icon: Users },
+    { href: "/settings" as const, label: t("settings"), icon: Settings },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-stretch border-t border-gray-200 bg-white lg:hidden">
       {bottomNavItems.map((item) => {
         const Icon = item.icon;
+        const cleanPath = pathname.replace(/^\/(en|es)/, "") || "/";
         const isActive =
-          pathname === item.href ||
-          (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          cleanPath === item.href ||
+          (item.href !== "/dashboard" && cleanPath.startsWith(item.href));
         return (
           <Link
             key={item.href}
@@ -130,7 +142,7 @@ export function BottomNav() {
           className="flex flex-1 flex-col items-center justify-center gap-0.5 py-3 text-xs font-medium text-gray-400 transition-colors"
         >
           <LogOut className="h-5 w-5" />
-          Sign out
+          {tc("signOut")}
         </button>
       ) : (
         <Link
@@ -138,7 +150,7 @@ export function BottomNav() {
           className="flex flex-1 flex-col items-center justify-center gap-0.5 py-3 text-xs font-medium text-gray-400"
         >
           <LogIn className="h-5 w-5" />
-          Sign in
+          {tc("signIn")}
         </Link>
       )}
     </nav>

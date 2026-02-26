@@ -86,3 +86,8 @@ model GuestUsage {
   weekStart DateTime @default(now())
   createdAt DateTime @default(now())
 }
+
+model ProcessedEvent {
+  id        String   @id // Stripe event ID
+  createdAt DateTime @default(now())
+}

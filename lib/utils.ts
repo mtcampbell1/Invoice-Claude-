@@ -5,19 +5,36 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number, currency = "USD"): string {
-  return new Intl.NumberFormat("en-US", {
+const localeMap: Record<string, string> = {
+  en: "en-US",
+  es: "es-MX",
+};
+
+function resolveLocale(locale?: string): string {
+  return localeMap[locale ?? "en"] ?? "en-US";
+}
+
+export function formatCurrency(
+  amount: number,
+  currency = "USD",
+  locale?: string
+): string {
+  return new Intl.NumberFormat(resolveLocale(locale), {
     style: "currency",
     currency,
   }).format(amount);
 }
 
-export function formatDate(date: Date | string): string {
-  return new Intl.DateTimeFormat("en-US", {
+export function formatDate(date: Date | string, locale?: string): string {
+  return new Intl.DateTimeFormat(resolveLocale(locale), {
     year: "numeric",
     month: "long",
     day: "numeric",
   }).format(new Date(date));
+}
+
+export function formatNumber(amount: number, locale?: string): string {
+  return new Intl.NumberFormat(resolveLocale(locale)).format(amount);
 }
 
 export function generateDocumentNumber(

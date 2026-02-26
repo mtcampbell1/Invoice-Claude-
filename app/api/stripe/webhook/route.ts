@@ -18,6 +18,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // Idempotency check: skip if we've already processed this event
+  try {
+    const existing = await prisma.processedEvent.findUnique({
+      where: { id: event.id },
+    });
+    if (existing) {
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+  } catch {
+    // If check fails (DB issue), continue processing to avoid losing events
+  }
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as {
@@ -93,6 +105,13 @@ export async function POST(req: Request) {
       }
       break;
     }
+  }
+
+  // Record the event as processed
+  try {
+    await prisma.processedEvent.create({ data: { id: event.id } });
+  } catch {
+    // Non-fatal: worst case we process a duplicate later
   }
 
   return NextResponse.json({ received: true });

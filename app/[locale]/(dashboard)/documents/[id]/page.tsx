@@ -8,13 +8,14 @@ import type { DocumentData } from "@/lib/claude";
 export default async function DocumentPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) redirect("/sign-in");
 
   const doc = await prisma.document.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
   });
 
   if (!doc) notFound();

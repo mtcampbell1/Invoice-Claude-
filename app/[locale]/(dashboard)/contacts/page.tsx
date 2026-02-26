@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import { Users, Plus, Trash2, Lock } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 interface Contact {
   id: string;
@@ -16,6 +17,9 @@ interface Contact {
 }
 
 export default function ContactsPage() {
+  const t = useTranslations("contacts");
+  const tc = useTranslations("common");
+  const td = useTranslations("doc");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [canSave, setCanSave] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -36,7 +40,7 @@ export default function ContactsPage() {
 
     fetch("/api/tokens")
       .then((r) => r.json())
-      .then((t) => setCanSave(["pro", "business"].includes(t.plan)))
+      .then((tok) => setCanSave(["pro", "business"].includes(tok.plan)))
       .catch(() => {});
   }, []);
 
@@ -77,15 +81,13 @@ export default function ContactsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
-          <p className="text-sm text-gray-500">
-            Save client info for quick document creation
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-sm text-gray-500">{t("subtitle")}</p>
         </div>
         {canSave && (
           <Button onClick={() => setShowForm(!showForm)}>
             <Plus className="mr-2 h-4 w-4" />
-            Add contact
+            {t("addContact")}
           </Button>
         )}
       </div>
@@ -94,15 +96,11 @@ export default function ContactsPage() {
         <div className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
           <Lock className="h-5 w-5 text-amber-600 shrink-0" />
           <div>
-            <p className="text-sm font-medium text-amber-800">
-              Pro feature – Upgrade to save client contacts
-            </p>
-            <p className="text-xs text-amber-600">
-              Available on Pro ($5.99/mo) and Business ($19.99/mo) plans.
-            </p>
+            <p className="text-sm font-medium text-amber-800">{t("proFeature")}</p>
+            <p className="text-xs text-amber-600">{t("proFeatureDesc")}</p>
           </div>
           <Link href="/upgrade" className="ml-auto">
-            <Button size="sm">Upgrade</Button>
+            <Button size="sm">{tc("upgrade")}</Button>
           </Link>
         </div>
       )}
@@ -110,57 +108,26 @@ export default function ContactsPage() {
       {showForm && (
         <Card>
           <CardHeader>
-            <h2 className="font-semibold">New Contact</h2>
+            <h2 className="font-semibold">{t("newContact")}</h2>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAdd} className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  label="Name *"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="John Smith"
-                  required
-                />
-                <Input
-                  label="Company"
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                  placeholder="Client Corp LLC"
-                />
+                <Input label={`${td("clientName").replace(" *", "")} *`} value={name} onChange={(e) => setName(e.target.value)} placeholder="John Smith" required />
+                <Input label={td("company")} value={company} onChange={(e) => setCompany(e.target.value)} placeholder="Client Corp LLC" />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input
-                  label="Email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="john@clientcorp.com"
-                />
-                <Input
-                  label="Phone"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+1 (555) 000-0000"
-                />
+                <Input label={td("email")} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@clientcorp.com" />
+                <Input label={td("phone")} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
               </div>
-              <Input
-                label="Address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="456 Client Ave, City, ST 12345"
-              />
+              <Input label={td("address")} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="456 Client Ave, City, ST 12345" />
               {error && <p className="text-sm text-red-600">{error}</p>}
               <div className="flex gap-2 justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowForm(false)}
-                >
-                  Cancel
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                  {tc("cancel")}
                 </Button>
                 <Button type="submit" loading={saving}>
-                  Save contact
+                  {t("saveContact")}
                 </Button>
               </div>
             </form>
@@ -172,11 +139,9 @@ export default function ContactsPage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Users className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-            <p className="text-gray-500">No contacts yet</p>
+            <p className="text-gray-500">{t("noContacts")}</p>
             {canSave && (
-              <p className="text-sm text-gray-400">
-                Add your first client contact above
-              </p>
+              <p className="text-sm text-gray-400">{t("noContactsHint")}</p>
             )}
           </CardContent>
         </Card>
