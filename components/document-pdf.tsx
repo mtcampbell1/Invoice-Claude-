@@ -81,14 +81,15 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 32,
+    alignItems: "flex-start",
+    marginBottom: 24,
   },
   logo: {
-    width: 120,
-    marginBottom: 8,
+    width: 100,
+    marginBottom: 6,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontFamily: "Helvetica-Bold",
     color: "#4f46e5",
     textTransform: "uppercase",
@@ -109,25 +110,25 @@ const styles = StyleSheet.create({
   addresses: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 32,
-    paddingBottom: 24,
+    marginBottom: 20,
+    paddingBottom: 16,
     borderBottom: "1 solid #e5e7eb",
   },
   addressBlock: {
     flex: 1,
   },
   sectionLabel: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: "Helvetica-Bold",
-    color: "#6b7280",
+    color: "#9ca3af",
     textTransform: "uppercase",
     letterSpacing: 1,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   addressName: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 4,
+    marginBottom: 3,
   },
   addressLine: {
     color: "#4b5563",
@@ -135,18 +136,18 @@ const styles = StyleSheet.create({
     lineHeight: 1.4,
   },
   table: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#f3f4f6",
     borderRadius: 4,
-    padding: "8 12",
-    marginBottom: 4,
+    padding: "6 10",
+    marginBottom: 2,
   },
   tableRow: {
     flexDirection: "row",
-    padding: "8 12",
+    padding: "7 10",
     borderBottom: "1 solid #f3f4f6",
   },
   colDesc: { width: "48%" },
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
   colRate: { width: "20%", textAlign: "right" },
   colAmount: { width: "20%", textAlign: "right" },
   headerText: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: "Helvetica-Bold",
     color: "#6b7280",
     textTransform: "uppercase",
@@ -162,37 +163,37 @@ const styles = StyleSheet.create({
   },
   totals: {
     marginLeft: "auto",
-    width: 240,
-    marginBottom: 24,
+    width: 220,
+    marginBottom: 16,
   },
   totalRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
   totalRowFinal: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderTop: "2 solid #4f46e5",
     marginTop: 4,
   },
   totalLabel: { color: "#6b7280" },
   totalValue: { fontFamily: "Helvetica-Bold" },
-  totalFinalLabel: { fontSize: 12, fontFamily: "Helvetica-Bold" },
-  totalFinalValue: { fontSize: 14, fontFamily: "Helvetica-Bold", color: "#4f46e5" },
+  totalFinalLabel: { fontSize: 11, fontFamily: "Helvetica-Bold" },
+  totalFinalValue: { fontSize: 13, fontFamily: "Helvetica-Bold", color: "#4f46e5" },
   footer: {
-    marginTop: 32,
-    paddingTop: 24,
+    marginTop: 20,
+    paddingTop: 16,
     borderTop: "1 solid #e5e7eb",
   },
   footerLabel: {
-    fontSize: 9,
+    fontSize: 8,
     fontFamily: "Helvetica-Bold",
-    color: "#6b7280",
+    color: "#9ca3af",
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   footerText: {
     color: "#4b5563",
@@ -223,7 +224,6 @@ export function InvoicePDF({ data }: { data: DocumentData }) {
               <Image src={data.logoUrl} style={styles.logo} />
             )}
             <Text style={styles.title}>{title}</Text>
-            <Text style={styles.addressName}>{data.from.name}</Text>
           </View>
           <View style={styles.docInfo}>
             <Text style={styles.docNumber}>{data.number}</Text>
@@ -336,13 +336,13 @@ export function InvoicePDF({ data }: { data: DocumentData }) {
         {/* Footer */}
         <View style={styles.footer}>
           {data.paymentTerms && (
-            <View style={{ marginBottom: 12 }}>
+            <View style={{ marginBottom: 8 }}>
               <Text style={styles.footerLabel}>{l.paymentTerms}</Text>
               <Text style={styles.footerText}>{data.paymentTerms}</Text>
             </View>
           )}
           {data.notes && (
-            <View style={{ marginBottom: 12 }}>
+            <View style={{ marginBottom: 8 }}>
               <Text style={styles.footerLabel}>{l.notes}</Text>
               <Text style={styles.footerText}>{data.notes}</Text>
             </View>
