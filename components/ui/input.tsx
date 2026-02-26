@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { InputHTMLAttributes, forwardRef } from "react";
+import { InputHTMLAttributes, forwardRef, useId } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -8,6 +8,9 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, id, type, onClick, ...props }, ref) => {
+    const autoId = useId();
+    const inputId = id ?? (label ? autoId : undefined);
+
     const handleClick =
       type === "date"
         ? (e: React.MouseEvent<HTMLInputElement>) => {
@@ -20,7 +23,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       <div className="space-y-1">
         {label && (
           <label
-            htmlFor={id}
+            htmlFor={inputId}
             className="block text-sm font-medium text-gray-700"
           >
             {label}
@@ -28,7 +31,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <input
           ref={ref}
-          id={id}
+          id={inputId}
           type={type}
           onClick={handleClick}
           className={cn(
