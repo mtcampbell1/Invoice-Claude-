@@ -269,12 +269,12 @@ export function DocumentForm({ type }: DocumentFormProps) {
           </div>
         </div>
 
-        {/* Guest upsell */}
+        {/* Guest upsell — single combined banner */}
         {!session && (
           <div className="flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-4">
             <div>
-              <p className="font-semibold text-indigo-900">{t("skipRetyping")}</p>
-              <p className="text-sm text-indigo-700">{t("skipRetypingDesc")}</p>
+              <p className="font-semibold text-indigo-900">{t("guestUpsellTitle")}</p>
+              <p className="text-sm text-indigo-700">{t("guestUpsellDesc")}</p>
             </div>
             <a href="/sign-up">
               <Button size="sm" className="ml-4 shrink-0">
@@ -285,17 +285,17 @@ export function DocumentForm({ type }: DocumentFormProps) {
           </div>
         )}
 
-        {/* Logo upsell */}
-        {!generated.logoUrl && (
+        {/* Logo upsell — only for signed-in users without a logo */}
+        {session && !generated.logoUrl && (
           <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
             <div>
               <p className="font-semibold text-amber-900">{t("addLogoTitle")}</p>
               <p className="text-sm text-amber-700">{t("addLogoDesc")}</p>
             </div>
-            <a href={session ? "/upgrade" : "/sign-up"}>
+            <a href="/upgrade">
               <Button size="sm" variant="outline" className="ml-4 shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100">
                 <ImageIcon className="mr-2 h-4 w-4" />
-                {session ? t("upgradeToPro") : t("createFreeAccount")}
+                {t("upgradeToPro")}
               </Button>
             </a>
           </div>
@@ -304,12 +304,6 @@ export function DocumentForm({ type }: DocumentFormProps) {
         {/* PDF Preview */}
         <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm" style={{ height: "80vh" }}>
           <DocumentPDFViewer data={generated} />
-        </div>
-
-        {/* Download bar */}
-        <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-5 py-3">
-          <span className="text-sm text-gray-500">{generated.number} · {generated.to.name}</span>
-          <DocumentDownloadButton data={generated} />
         </div>
       </div>
     );
