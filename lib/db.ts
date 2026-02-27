@@ -10,24 +10,19 @@ function createPrismaClient() {
     throw new Error("DATABASE_URL is not set");
   }
 
-  let pool: import("pg").Pool;
-
-  if (process.env.DATABASE_PASSWORD) {
-    // Use DATABASE_PASSWORD directly to avoid URL-encoding issues with special characters
-    const url = new URL(process.env.DATABASE_URL);
-    const { Pool } = require("pg");
-    pool = new Pool({
-      host: url.hostname,
-      port: parseInt(url.port) || 5432,
-      database: url.pathname.slice(1),
-      user: decodeURIComponent(url.username),
-      password: process.env.DATABASE_PASSWORD,
-      ssl: { rejectUnauthorized: false },
-    });
-  } else {
-    const { Pool } = require("pg");
-    pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  }
+  // Parse all connection params from DATABASE_URL so special characters in the
+  // password are handled correctly via URL percent-decoding (new URL() decodes
+  // %23→# %2F→/ %25→% etc. automatically).
+  const url = new URL(process.env.DATABASE_URL);
+  const { Pool } = require("pg");
+  const pool: import("pg").Pool = new Pool({
+    host: url.hostname,
+    port: parseInt(url.port) || 5432,
+    database: url.pathname.slice(1),
+    user: decodeURIComponent(url.username),
+    password: decodeURIComponent(url.password),
+    ssl: { rejectUnauthorized: false },
+  });
 
   const adapter = new PrismaPg(pool);
 

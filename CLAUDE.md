@@ -32,3 +32,6 @@ Vercel (vercel.json) — pushes to main auto-deploy
 
 ## Session Notes / Decisions
 - Hero CTA: 3 buttons (Invoice / Receipt / Statement) instead of single "Start for free". "Start for free" is now tagline text above buttons. "View pricing" demoted to small text link below buttons.
+- Supabase DB password ALWAYS contains special characters (Supabase requires them). Never ask user to remove special chars. URL-encode the password in DATABASE_URL; lib/db.ts reads it via `new URL().password` which auto-decodes it.
+- Supabase connection: use transaction pooler `aws-1-us-east-1.pooler.supabase.com:6543` (NOT direct host, NOT aws-0). Username format for pooler: `postgres.vrnbmanfjdosurbjhbae`. DATABASE_PASSWORD env var is redundant — password comes from DATABASE_URL parsing.
+- Supabase free plan auto-pauses after 7 days inactivity — if DB unreachable, user must resume at supabase.com first.
