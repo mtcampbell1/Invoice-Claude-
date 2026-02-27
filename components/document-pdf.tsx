@@ -132,8 +132,8 @@ const styles = StyleSheet.create({
   },
   addressLine: {
     color: "#4b5563",
-    marginBottom: 2,
-    lineHeight: 1.4,
+    marginBottom: 1,
+    lineHeight: 1.2,
   },
   table: {
     marginBottom: 16,
