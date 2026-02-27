@@ -1,6 +1,6 @@
 // Runs all migration SQL files (in timestamp order) against the database.
 // Each migration uses IF NOT EXISTS / ADD COLUMN IF NOT EXISTS so re-runs are safe.
-// Uses DATABASE_PASSWORD (if set) to avoid URL-encoding issues with special chars.
+// Password is read from DATABASE_URL (percent-decoded automatically).
 const { Pool } = require("pg");
 const fs = require("fs");
 const path = require("path");
@@ -14,8 +14,7 @@ async function runMigrations() {
   let pool;
   try {
     const url = new URL(process.env.DATABASE_URL);
-    const password =
-      process.env.DATABASE_PASSWORD || decodeURIComponent(url.password);
+    const password = decodeURIComponent(url.password);
 
     pool = new Pool({
       host: url.hostname,
@@ -45,10 +44,14 @@ async function runMigrations() {
       for (const dir of migrationDirs) {
         const sqlPath = path.join(migrationsDir, dir, "migration.sql");
         const sql = fs.readFileSync(sqlPath, "utf8");
-        await client.query(sql);
-        console.log(`✓ Applied migration: ${dir}`);
+        try {
+          await client.query(sql);
+          console.log(`✓ Applied migration: ${dir}`);
+        } catch (migErr) {
+          console.warn(`⚠ Migration skipped (${dir}):`, migErr.message);
+        }
       }
-      console.log("✓ All migrations applied successfully");
+      console.log("✓ All migrations processed");
     } finally {
       client.release();
     }

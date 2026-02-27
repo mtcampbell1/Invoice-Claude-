@@ -1,142 +1,239 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Invoice form — fields and interactions", () => {
+// ─── Invoice form ────────────────────────────────────────────────────────────
+
+test.describe("Invoice form — structure", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/create/invoice");
   });
 
-  test("renders all form sections", async ({ page }) => {
-    await expect(page.getByText("Your Business")).toBeVisible();
-    await expect(page.getByText("Client / Bill To")).toBeVisible();
-    await expect(page.getByText("Invoice Details")).toBeVisible();
-    await expect(page.getByText("Notes (optional)")).toBeVisible();
+  test("page heading says 'New Invoice'", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: /new invoice/i })).toBeVisible();
   });
 
-  test("business fields are present", async ({ page }) => {
+  test("has 'Your Business' section", async ({ page }) => {
+    await expect(page.getByText("Your Business")).toBeVisible();
+  });
+
+  test("has 'Client / Bill To' section", async ({ page }) => {
+    await expect(page.getByText("Client / Bill To")).toBeVisible();
+  });
+
+  test("has 'Invoice Details' section", async ({ page }) => {
+    await expect(page.getByText("Invoice Details")).toBeVisible();
+  });
+
+  test("has Notes field", async ({ page }) => {
+    await expect(page.getByPlaceholder(/payment instructions/i)).toBeVisible();
+  });
+});
+
+test.describe("Invoice form — business fields", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/create/invoice");
+  });
+
+  // After the useId fix, getByLabel works because label htmlFor is now set
+  test("Business Name field is present", async ({ page }) => {
     await expect(page.getByLabel(/business name/i)).toBeVisible();
+  });
+
+  test("Address field is present", async ({ page }) => {
     await expect(page.getByLabel(/^address$/i).first()).toBeVisible();
+  });
+
+  test("City field is present", async ({ page }) => {
     await expect(page.getByLabel(/^city$/i).first()).toBeVisible();
+  });
+
+  test("State field is present", async ({ page }) => {
     await expect(page.getByLabel(/^state$/i).first()).toBeVisible();
+  });
+
+  test("Zip field is present", async ({ page }) => {
     await expect(page.getByLabel(/^zip$/i).first()).toBeVisible();
+  });
+
+  test("Email field is present", async ({ page }) => {
     await expect(page.getByLabel(/^email$/i).first()).toBeVisible();
+  });
+
+  test("Phone field is present", async ({ page }) => {
     await expect(page.getByLabel(/^phone$/i).first()).toBeVisible();
+  });
+
+  test("Tax ID field is present", async ({ page }) => {
     await expect(page.getByLabel(/tax id/i)).toBeVisible();
   });
+});
 
-  test("client fields are present", async ({ page }) => {
-    await expect(page.getByLabel(/client name/i)).toBeVisible();
-    await expect(page.getByLabel(/company/i)).toBeVisible();
+test.describe("Invoice form — client fields", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/create/invoice");
   });
 
-  test("invoice-specific fields are present", async ({ page }) => {
-    await expect(page.getByLabel(/invoice number/i)).toBeVisible();
-    await expect(page.getByLabel(/^date$/i)).toBeVisible();
+  test("Client Name field is present", async ({ page }) => {
+    await expect(page.getByLabel(/client name/i)).toBeVisible();
+  });
+
+  test("Company field is present", async ({ page }) => {
+    await expect(page.getByLabel(/^company$/i)).toBeVisible();
+  });
+});
+
+test.describe("Invoice form — document detail fields", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/create/invoice");
+  });
+
+  test("Invoice Number field is present and auto-populated", async ({ page }) => {
+    const field = page.getByLabel(/invoice number/i);
+    await expect(field).toBeVisible();
+    await expect(field).not.toHaveValue("");
+  });
+
+  test("Date field is present and auto-populated", async ({ page }) => {
+    const field = page.getByLabel(/^date$/i);
+    await expect(field).toBeVisible();
+    await expect(field).not.toHaveValue("");
+  });
+
+  test("Due Date field is present (invoice-specific)", async ({ page }) => {
     await expect(page.getByLabel(/due date/i)).toBeVisible();
   });
+});
 
-  test("line item row has description, quantity, and rate", async ({ page }) => {
-    await expect(page.getByPlaceholder(/description of service/i)).toBeVisible();
-    // Quantity and rate inputs
-    const numberInputs = page.locator('input[type="number"]');
-    await expect(numberInputs).toHaveCount(3); // qty, rate, tax
+test.describe("Invoice form — line items", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/create/invoice");
   });
 
-  test("Add line item button works", async ({ page }) => {
-    const addBtn = page.getByText(/add line item/i);
-    await addBtn.click();
-    // Should now have 2 description fields
-    const descriptions = page.getByPlaceholder(/description of service/i);
-    await expect(descriptions).toHaveCount(2);
+  test("starts with one description field", async ({ page }) => {
+    await expect(page.getByPlaceholder(/description of service/i)).toHaveCount(1);
   });
 
-  test("Remove line item button appears with multiple items", async ({ page }) => {
-    // Initially no trash icon (only 1 item)
-    await expect(page.locator('[class*="trash"], [data-testid="remove-item"]').first()).not.toBeVisible();
-    // Add another item
+  test("has quantity, rate (per row) and tax rate number inputs — 3 for 1 row", async ({ page }) => {
+    // 1 row × (qty + rate) + 1 tax rate = 3
+    await expect(page.locator('input[type="number"]')).toHaveCount(3);
+  });
+
+  test("'Add line item' button adds a second row", async ({ page }) => {
     await page.getByText(/add line item/i).click();
-    // Now trash icons should appear
-    const trashButtons = page.locator('button').filter({ has: page.locator('svg') }).filter({ hasText: '' });
-    // At least some delete mechanism should exist
-    const descriptions = page.getByPlaceholder(/description of service/i);
-    await expect(descriptions).toHaveCount(2);
+    await expect(page.getByPlaceholder(/description of service/i)).toHaveCount(2);
+    // 2 rows × 2 number inputs + 1 tax = 5
+    await expect(page.locator('input[type="number"]')).toHaveCount(5);
   });
 
-  test("totals update when line item values change", async ({ page }) => {
-    // Fill in a rate
-    const rateInput = page.locator('input[type="number"]').nth(1); // rate field
+  test("remove button appears with two rows and removes a row", async ({ page }) => {
+    await page.getByText(/add line item/i).click();
+    await expect(page.getByPlaceholder(/description of service/i)).toHaveCount(2);
+    // Click the first trash button (svg icon button)
+    await page.locator("button").filter({ has: page.locator(".lucide-trash-2") }).first().click();
+    await expect(page.getByPlaceholder(/description of service/i)).toHaveCount(1);
+  });
+
+  test("totals update when rate is entered", async ({ page }) => {
+    const rateInput = page.locator('input[type="number"]').nth(1);
     await rateInput.fill("100");
-    // Should show $100.00 somewhere in totals
     await expect(page.getByText("$100.00").first()).toBeVisible();
   });
 
-  test("tax rate affects total", async ({ page }) => {
-    // Set rate to 100
-    const rateInput = page.locator('input[type="number"]').nth(1);
-    await rateInput.fill("200");
-    // Set tax rate
-    const taxInput = page.getByLabel(/tax rate/i);
-    await taxInput.fill("10");
-    // Should show tax amount ($20.00) and total ($220.00)
+  test("tax rate field changes total", async ({ page }) => {
+    await page.locator('input[type="number"]').nth(1).fill("200");
+    await page.getByLabel(/tax rate/i).fill("10");
     await expect(page.getByText("$20.00").first()).toBeVisible();
     await expect(page.getByText("$220.00").first()).toBeVisible();
   });
+});
 
-  test("Generate with AI button exists at top and bottom", async ({ page }) => {
-    const generateButtons = page.getByRole("button", { name: /generate/i });
-    await expect(generateButtons).toHaveCount(2);
+test.describe("Invoice form — actions", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/create/invoice");
   });
 
-  test("notes textarea is fillable", async ({ page }) => {
+  test("has two Generate buttons (header and footer of form)", async ({ page }) => {
+    // Button says "Generate Invoice" — one at the top header, one at the bottom
+    await expect(page.getByRole("button", { name: /generate/i })).toHaveCount(2);
+  });
+
+  test("'Fill test data' button populates all fields", async ({ page }) => {
+    await page.getByRole("button", { name: /fill test data/i }).click();
+    await expect(page.getByLabel(/business name/i)).toHaveValue("Acme Consulting LLC");
+    await expect(page.getByLabel(/client name/i)).toHaveValue("Jane Smith");
+    // Three line items should now exist
+    await expect(page.getByPlaceholder(/description of service/i)).toHaveCount(3);
+  });
+
+  test("notes textarea accepts input", async ({ page }) => {
     const notes = page.getByPlaceholder(/payment instructions/i);
     await notes.fill("Please pay within 30 days");
     await expect(notes).toHaveValue("Please pay within 30 days");
   });
 });
 
+// ─── Receipt form ─────────────────────────────────────────────────────────────
+
 test.describe("Receipt form", () => {
-  test("does NOT show due date field", async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await page.goto("/create/receipt");
-    await expect(page.getByLabel(/due date/i)).not.toBeVisible();
   });
 
-  test("shows receipt-specific heading", async ({ page }) => {
-    await page.goto("/create/receipt");
+  test("page heading says 'New Receipt'", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: /new receipt/i })).toBeVisible();
+  });
+
+  test("has 'Receipt Details' section", async ({ page }) => {
     await expect(page.getByText("Receipt Details")).toBeVisible();
   });
-});
 
-test.describe("Statement form", () => {
-  test("does NOT show due date field", async ({ page }) => {
-    await page.goto("/create/statement");
+  test("does NOT show a Due Date field", async ({ page }) => {
     await expect(page.getByLabel(/due date/i)).not.toBeVisible();
   });
 
-  test("shows statement-specific heading", async ({ page }) => {
-    await page.goto("/create/statement");
-    await expect(page.getByText("Statement Details")).toBeVisible();
+  test("Receipt Number field is auto-populated", async ({ page }) => {
+    const field = page.getByLabel(/receipt number/i);
+    await expect(field).toBeVisible();
+    await expect(field).not.toHaveValue("");
   });
 });
 
-test.describe("Guest document generation", () => {
-  test("guest can fill and submit full invoice form", async ({ page }) => {
+// ─── Statement form ───────────────────────────────────────────────────────────
+
+test.describe("Statement form", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/create/statement");
+  });
+
+  test("page heading says 'New Statement'", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: /new statement/i })).toBeVisible();
+  });
+
+  test("has 'Statement Details' section", async ({ page }) => {
+    await expect(page.getByText("Statement Details")).toBeVisible();
+  });
+
+  test("does NOT show a Due Date field", async ({ page }) => {
+    await expect(page.getByLabel(/due date/i)).not.toBeVisible();
+  });
+
+  test("Statement Number field is auto-populated", async ({ page }) => {
+    const field = page.getByLabel(/statement number/i);
+    await expect(field).toBeVisible();
+    await expect(field).not.toHaveValue("");
+  });
+});
+
+// ─── Logo upsell on form ──────────────────────────────────────────────────────
+
+test.describe("Form — logo upsell (guest)", () => {
+  test("guest sees 'Add your logo' hint", async ({ page }) => {
     await page.goto("/create/invoice");
+    await expect(page.getByText(/add your logo/i)).toBeVisible();
+  });
 
-    // Fill business info
-    await page.getByLabel(/business name/i).fill("Test Business LLC");
-
-    // Fill client info
-    await page.getByLabel(/client name/i).fill("Test Client");
-
-    // Fill line item
-    await page.getByPlaceholder(/description of service/i).fill("Web Development");
-    await page.locator('input[type="number"]').nth(1).fill("500");
-
-    // Submit
-    await page.getByRole("button", { name: /generate/i }).first().click();
-
-    // Should show generated doc or error (both are valid outcomes depending on API)
-    await expect(
-      page.getByText(/generated|preview|failed|error|tokens/i).first()
-    ).toBeVisible({ timeout: 30_000 });
+  test("logo hint has a Sign up link", async ({ page }) => {
+    await page.goto("/create/invoice");
+    // The upsell shows a "Sign up free" link for guests
+    await expect(page.getByRole("link", { name: /sign up free/i })).toBeVisible();
   });
 });

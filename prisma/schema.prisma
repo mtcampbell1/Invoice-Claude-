@@ -21,6 +21,8 @@ model User {
   tokensResetAt        DateTime  @default(now())
   stripeCustomerId     String?
   stripeSubscriptionId String?
+  resetToken           String?   @unique
+  resetTokenExpires    DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 

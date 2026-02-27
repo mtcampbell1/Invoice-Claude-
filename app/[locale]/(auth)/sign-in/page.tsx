@@ -61,15 +61,22 @@ export default function SignInPage() {
             required
             autoComplete="email"
           />
-          <Input
-            label={t("password")}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            required
-            autoComplete="current-password"
-          />
+          <div className="space-y-1">
+            <Input
+              label={t("password")}
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              autoComplete="current-password"
+            />
+            <div className="text-right">
+              <Link href="/forgot-password" className="text-xs text-indigo-600 hover:text-indigo-700">
+                {t("forgotPassword")}
+              </Link>
+            </div>
+          </div>
           {error && (
             <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
               {error}

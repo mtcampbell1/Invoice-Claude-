@@ -1,35 +1,75 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Document generation (guest)", () => {
-  test("invoice page renders the form", async ({ page }) => {
+// Tests that call /api/generate require a live Anthropic API key.
+// Tag: [api] — skipped automatically when ANTHROPIC_API_KEY is unset.
+const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+
+test.describe("Form pages load without API key", () => {
+  test("invoice form renders", async ({ page }) => {
     await page.goto("/create/invoice");
-    // Should show document form fields
-    await expect(page.getByText(/invoice/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /new invoice/i })).toBeVisible();
   });
 
-  test("receipt page renders the form", async ({ page }) => {
+  test("receipt form renders", async ({ page }) => {
     await page.goto("/create/receipt");
-    await expect(page.getByText(/receipt/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /new receipt/i })).toBeVisible();
   });
 
-  test("statement page renders the form", async ({ page }) => {
+  test("statement form renders", async ({ page }) => {
     await page.goto("/create/statement");
-    await expect(page.getByText(/statement/i).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /new statement/i })).toBeVisible();
+  });
+});
+
+test.describe("Post-generation result page — upsell banners (guest)", () => {
+  test.skip(!hasApiKey, "Requires ANTHROPIC_API_KEY");
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/create/invoice");
+    await page.getByRole("button", { name: /fill test data/i }).click();
+    await page.getByRole("button", { name: /generate/i }).click();
+    await page.waitForSelector('h1:has-text("Generated")', { timeout: 40_000 });
   });
 
-  test("guest can submit invoice form and see generated document", async ({ page }) => {
-    await page.goto("/create/invoice");
+  test("guest sees exactly ONE upsell banner (combined, not two)", async ({ page }) => {
+    // Guest should see the combined indigo banner only — NOT the amber logo banner too
+    await expect(page.locator(".bg-indigo-50").filter({ has: page.getByRole("link") })).toHaveCount(1);
+    await expect(page.locator(".bg-amber-50").filter({ has: page.getByRole("link") })).toHaveCount(0);
+  });
 
-    // Fill in required fields
-    await page.getByLabel(/from.*name|your.*name|business.*name/i).fill("Acme Corp");
-    await page.getByLabel(/to.*name|client.*name|bill.*to/i).fill("Client Co");
+  test("guest banner CTA says 'Create free account', NOT 'Upgrade to Pro'", async ({ page }) => {
+    await expect(page.getByRole("link", { name: /create free account/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /upgrade to pro/i })).not.toBeVisible();
+  });
 
-    // Submit
-    await page.getByRole("button", { name: /generate|create|submit/i }).click();
+  test("PDF viewer is visible", async ({ page }) => {
+    await expect(page.locator("iframe")).toBeVisible({ timeout: 10_000 });
+  });
 
-    // Should show the generated document or a success state
-    await expect(
-      page.getByText(/invoice|generated|preview/i).first()
-    ).toBeVisible({ timeout: 30_000 });
+  test("Download PDF button is visible (exactly once — no redundant bar)", async ({ page }) => {
+    await expect(page.getByRole("button", { name: /download pdf/i })).toHaveCount(1, { timeout: 10_000 });
+  });
+
+  test("'Create Another' button returns to the blank form", async ({ page }) => {
+    await page.getByRole("button", { name: /create another/i }).click();
+    await expect(page.getByRole("heading", { name: /new invoice/i })).toBeVisible();
+  });
+});
+
+test.describe("Receipt and Statement generation", () => {
+  test.skip(!hasApiKey, "Requires ANTHROPIC_API_KEY");
+
+  test("receipt generates and shows 'Receipt Generated'", async ({ page }) => {
+    await page.goto("/create/receipt");
+    await page.getByRole("button", { name: /fill test data/i }).click();
+    await page.getByRole("button", { name: /generate/i }).click();
+    await expect(page.getByText(/receipt generated/i)).toBeVisible({ timeout: 40_000 });
+  });
+
+  test("statement generates and shows 'Statement Generated'", async ({ page }) => {
+    await page.goto("/create/statement");
+    await page.getByRole("button", { name: /fill test data/i }).click();
+    await page.getByRole("button", { name: /generate/i }).click();
+    await expect(page.getByText(/statement generated/i)).toBeVisible({ timeout: 40_000 });
   });
 });

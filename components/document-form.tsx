@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import type { DocumentData } from "@/lib/claude";
 import { generateDocumentNumber, formatCurrency } from "@/lib/utils";
-import { Plus, Trash2, FileText, UserPlus, FlaskConical, ImageIcon } from "lucide-react";
+import { Plus, Trash2, FileText, UserPlus, FlaskConical, ImageIcon, RefreshCw } from "lucide-react";
 
-const DocumentDownloadButton = dynamic(
-  () => import("@/components/document-pdf").then((m) => m.DocumentDownloadButton),
+const DocumentShareButton = dynamic(
+  () => import("@/components/document-pdf").then((m) => m.DocumentShareButton),
   { ssr: false }
 );
 
@@ -60,6 +60,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
   const locale = useLocale();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [tokenResetMsg, setTokenResetMsg] = useState("");
   const [generated, setGenerated] = useState<DocumentData | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [business, setBusiness] = useState<Business | null>(null);
@@ -185,6 +186,19 @@ export function DocumentForm({ type }: DocumentFormProps) {
     setNotes("Payment due within 30 days. Please reference invoice number when paying. Thank you for your business!");
   };
 
+  const resetTokens = async () => {
+    const res = await fetch("/api/tokens", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tokens: 10 }),
+    });
+    if (res.ok) {
+      setTokenResetMsg("Tokens reset to 10!");
+      router.refresh();
+      setTimeout(() => setTokenResetMsg(""), 3000);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -265,16 +279,16 @@ export function DocumentForm({ type }: DocumentFormProps) {
             >
               {t("createAnother")}
             </Button>
-            <DocumentDownloadButton data={generated} />
+            <DocumentShareButton data={generated} />
           </div>
         </div>
 
-        {/* Guest upsell */}
+        {/* Guest upsell — single combined banner */}
         {!session && (
           <div className="flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-4">
             <div>
-              <p className="font-semibold text-indigo-900">{t("skipRetyping")}</p>
-              <p className="text-sm text-indigo-700">{t("skipRetypingDesc")}</p>
+              <p className="font-semibold text-indigo-900">{t("guestUpsellTitle")}</p>
+              <p className="text-sm text-indigo-700">{t("guestUpsellDesc")}</p>
             </div>
             <a href="/sign-up">
               <Button size="sm" className="ml-4 shrink-0">
@@ -285,17 +299,17 @@ export function DocumentForm({ type }: DocumentFormProps) {
           </div>
         )}
 
-        {/* Logo upsell */}
-        {!generated.logoUrl && (
+        {/* Logo upsell — only for signed-in users without a logo */}
+        {session && !generated.logoUrl && (
           <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
             <div>
               <p className="font-semibold text-amber-900">{t("addLogoTitle")}</p>
               <p className="text-sm text-amber-700">{t("addLogoDesc")}</p>
             </div>
-            <a href={session ? "/upgrade" : "/sign-up"}>
+            <a href="/upgrade">
               <Button size="sm" variant="outline" className="ml-4 shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100">
                 <ImageIcon className="mr-2 h-4 w-4" />
-                {session ? t("upgradeToPro") : t("createFreeAccount")}
+                {t("upgradeToPro")}
               </Button>
             </a>
           </div>
@@ -304,12 +318,6 @@ export function DocumentForm({ type }: DocumentFormProps) {
         {/* PDF Preview */}
         <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm" style={{ height: "80vh" }}>
           <DocumentPDFViewer data={generated} />
-        </div>
-
-        {/* Download bar */}
-        <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-5 py-3">
-          <span className="text-sm text-gray-500">{generated.number} · {generated.to.name}</span>
-          <DocumentDownloadButton data={generated} />
         </div>
       </div>
     );
@@ -324,11 +332,22 @@ export function DocumentForm({ type }: DocumentFormProps) {
           </h1>
           <p className="text-sm text-gray-500">{t("downloadAsPdf")}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={fillTestData}>
             <FlaskConical className="mr-2 h-3.5 w-3.5" />
             {t("fillTestData")}
           </Button>
+          <div className="relative">
+            <Button type="button" variant="outline" size="sm" onClick={resetTokens} title="Reset tokens to 10 (dev)">
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
+              Reset Tokens
+            </Button>
+            {tokenResetMsg && (
+              <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-0.5 text-xs text-white">
+                {tokenResetMsg}
+              </span>
+            )}
+          </div>
           <Button type="submit" loading={loading} size="lg">
             <FileText className="mr-2 h-4 w-4" />
             {t("generateType", { type: typeLabel })}
