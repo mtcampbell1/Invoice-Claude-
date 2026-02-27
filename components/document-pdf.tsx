@@ -137,10 +137,10 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     marginBottom: 3,
   },
-  addressLine: {
+  addressLines: {
     color: "#4b5563",
-    marginBottom: 1,
-    lineHeight: 1.2,
+    fontSize: 9.5,
+    lineHeight: 1.5,
   },
   table: {
     marginBottom: 16,
@@ -246,45 +246,27 @@ export function InvoicePDF({ data }: { data: DocumentData }) {
           <View style={styles.addressBlock}>
             <Text style={styles.sectionLabel}>{l.from}</Text>
             <Text style={styles.addressName}>{data.from.name}</Text>
-            {data.from.address && (
-              <Text style={styles.addressLine}>{data.from.address}</Text>
-            )}
-            {(data.from.city || data.from.state) && (
-              <Text style={styles.addressLine}>
-                {[data.from.city, data.from.state, data.from.zip]
-                  .filter(Boolean)
-                  .join(", ")}
-              </Text>
-            )}
-            {data.from.phone && (
-              <Text style={styles.addressLine}>{data.from.phone}</Text>
-            )}
-            {data.from.email && (
-              <Text style={styles.addressLine}>{data.from.email}</Text>
-            )}
-            {data.from.taxId && (
-              <Text style={styles.addressLine}>{l.taxId}: {data.from.taxId}</Text>
-            )}
+            <Text style={styles.addressLines}>
+              {[
+                data.from.address,
+                [data.from.city, data.from.state, data.from.zip].filter(Boolean).join(", "),
+                data.from.phone,
+                data.from.email,
+                data.from.taxId ? `${l.taxId}: ${data.from.taxId}` : null,
+              ].filter(Boolean).join("\n")}
+            </Text>
           </View>
           <View style={[styles.addressBlock, { textAlign: "right" }]}>
             <Text style={styles.sectionLabel}>{l.billTo}</Text>
             <Text style={styles.addressName}>{data.to.name}</Text>
-            {data.to.company && (
-              <Text style={styles.addressLine}>{data.to.company}</Text>
-            )}
-            {data.to.address && (
-              <Text style={styles.addressLine}>{data.to.address}</Text>
-            )}
-            {(data.to.city || data.to.state) && (
-              <Text style={styles.addressLine}>
-                {[data.to.city, data.to.state, data.to.zip]
-                  .filter(Boolean)
-                  .join(", ")}
-              </Text>
-            )}
-            {data.to.email && (
-              <Text style={styles.addressLine}>{data.to.email}</Text>
-            )}
+            <Text style={styles.addressLines}>
+              {[
+                data.to.company,
+                data.to.address,
+                [data.to.city, data.to.state, data.to.zip].filter(Boolean).join(", "),
+                data.to.email,
+              ].filter(Boolean).join("\n")}
+            </Text>
           </View>
         </View>
 

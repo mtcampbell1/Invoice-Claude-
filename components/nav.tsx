@@ -115,7 +115,10 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-stretch border-t border-gray-200 bg-white lg:hidden">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 flex items-stretch border-t border-gray-200 bg-white lg:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {bottomNavItems.map((item) => {
         const Icon = item.icon;
         const cleanPath = pathname.replace(/^\/(en|es)/, "") || "/";

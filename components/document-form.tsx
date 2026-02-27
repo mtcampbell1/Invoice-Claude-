@@ -260,7 +260,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
   if (generated) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               {t("generated", { type: typeLabel })}
@@ -285,13 +285,13 @@ export function DocumentForm({ type }: DocumentFormProps) {
 
         {/* Guest upsell — single combined banner */}
         {!session && (
-          <div className="flex items-center justify-between rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-4">
+          <div className="flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-semibold text-indigo-900">{t("guestUpsellTitle")}</p>
               <p className="text-sm text-indigo-700">{t("guestUpsellDesc")}</p>
             </div>
-            <a href="/sign-up">
-              <Button size="sm" className="ml-4 shrink-0">
+            <a href="/sign-up" className="sm:ml-4">
+              <Button size="sm" className="w-full sm:w-auto">
                 <UserPlus className="mr-2 h-4 w-4" />
                 {t("createFreeAccount")}
               </Button>
@@ -301,13 +301,13 @@ export function DocumentForm({ type }: DocumentFormProps) {
 
         {/* Logo upsell — only for signed-in users without a logo */}
         {session && !generated.logoUrl && (
-          <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+          <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-semibold text-amber-900">{t("addLogoTitle")}</p>
               <p className="text-sm text-amber-700">{t("addLogoDesc")}</p>
             </div>
-            <a href="/upgrade">
-              <Button size="sm" variant="outline" className="ml-4 shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100">
+            <a href="/upgrade" className="sm:ml-4">
+              <Button size="sm" variant="outline" className="w-full border-amber-300 text-amber-800 hover:bg-amber-100 sm:w-auto">
                 <ImageIcon className="mr-2 h-4 w-4" />
                 {t("upgradeToPro")}
               </Button>
@@ -316,7 +316,7 @@ export function DocumentForm({ type }: DocumentFormProps) {
         )}
 
         {/* PDF Preview */}
-        <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm" style={{ height: "80vh" }}>
+        <div className="overflow-hidden rounded-xl border border-gray-200 shadow-sm" style={{ height: "clamp(420px, 70vh, 900px)" }}>
           <DocumentPDFViewer data={generated} />
         </div>
       </div>
@@ -325,14 +325,14 @@ export function DocumentForm({ type }: DocumentFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
             {t("newType", { type: typeLabel })}
           </h1>
           <p className="text-sm text-gray-500">{t("downloadAsPdf")}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button type="button" variant="outline" size="sm" onClick={fillTestData}>
             <FlaskConical className="mr-2 h-3.5 w-3.5" />
             {t("fillTestData")}
@@ -375,8 +375,10 @@ export function DocumentForm({ type }: DocumentFormProps) {
           <CardContent className="space-y-3">
             <Input label={t("businessName")} value={fromName} onChange={(e) => setFromName(e.target.value)} placeholder="Your Company Inc." required />
             <Input label={t("address")} value={fromAddress} onChange={(e) => setFromAddress(e.target.value)} placeholder="123 Main St" />
-            <div className="grid grid-cols-3 gap-2">
-              <Input label={t("city")} value={fromCity} onChange={(e) => setFromCity(e.target.value)} placeholder="City" />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="col-span-2 sm:col-span-1">
+                <Input label={t("city")} value={fromCity} onChange={(e) => setFromCity(e.target.value)} placeholder="City" />
+              </div>
               <Input label={t("state")} value={fromState} onChange={(e) => setFromState(e.target.value)} placeholder="ST" />
               <Input label={t("zip")} value={fromZip} onChange={(e) => setFromZip(e.target.value)} placeholder="12345" />
             </div>
@@ -426,8 +428,10 @@ export function DocumentForm({ type }: DocumentFormProps) {
             <Input label={t("company")} value={toCompany} onChange={(e) => setToCompany(e.target.value)} placeholder="Client Company LLC" />
             <Input label={t("email")} type="email" value={toEmail} onChange={(e) => setToEmail(e.target.value)} placeholder="client@company.com" />
             <Input label={t("address")} value={toAddress} onChange={(e) => setToAddress(e.target.value)} placeholder="456 Client Ave" />
-            <div className="grid grid-cols-3 gap-2">
-              <Input label={t("city")} value={toCity} onChange={(e) => setToCity(e.target.value)} placeholder="City" />
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="col-span-2 sm:col-span-1">
+                <Input label={t("city")} value={toCity} onChange={(e) => setToCity(e.target.value)} placeholder="City" />
+              </div>
               <Input label={t("state")} value={toState} onChange={(e) => setToState(e.target.value)} placeholder="ST" />
               <Input label={t("zip")} value={toZip} onChange={(e) => setToZip(e.target.value)} placeholder="12345" />
             </div>
@@ -451,8 +455,73 @@ export function DocumentForm({ type }: DocumentFormProps) {
             )}
           </div>
 
-          {/* Line items */}
-          <div className="mb-4">
+          {/* Line items — mobile card layout */}
+          <div className="mb-4 sm:hidden space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{t("description")}</p>
+            {items.map((item, index) => (
+              <div key={index} className="rounded-lg border border-gray-200 p-3 space-y-2">
+                <div className="flex items-start gap-2">
+                  <input
+                    className="block flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    placeholder={t("descriptionPlaceholder")}
+                    value={item.description}
+                    onChange={(e) => updateItem(index, "description", e.target.value)}
+                    required
+                  />
+                  {items.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="mt-2 shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-end gap-2">
+                  <div className="w-20 shrink-0">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{t("qty")}</label>
+                    <input
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-center focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                      required
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-xs font-medium text-gray-500 mb-1">{t("rateLabel")}</label>
+                    <input
+                      className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={item.rate}
+                      onChange={(e) => updateItem(index, "rate", parseFloat(e.target.value) || 0)}
+                      required
+                    />
+                  </div>
+                  <div className="shrink-0 pb-1 text-right">
+                    <p className="text-xs font-medium text-gray-500 mb-1">{t("amount")}</p>
+                    <p className="text-sm font-semibold text-gray-900">{formatCurrency(item.quantity * item.rate, "USD", locale)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addItem}
+              className="flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              <Plus className="h-4 w-4" />
+              {t("addLineItem")}
+            </button>
+          </div>
+
+          {/* Line items — desktop table layout */}
+          <div className="mb-4 hidden sm:block">
             <div className="mb-2 grid grid-cols-12 gap-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
               <span className="col-span-6">{t("description")}</span>
               <span className="col-span-2 text-center">{t("qty")}</span>

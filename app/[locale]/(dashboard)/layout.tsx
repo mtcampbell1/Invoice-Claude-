@@ -54,7 +54,7 @@ export default async function DashboardLayout({
         </header>
 
         {/* Main content — pb-24 on mobile to clear the fixed bottom nav */}
-        <main className="flex-1 overflow-y-auto p-4 pb-24 sm:p-6 lg:pb-6">
+        <main className="flex-1 overflow-y-auto p-4 pb-28 sm:p-6 lg:pb-6">
           {children}
         </main>
       </div>
